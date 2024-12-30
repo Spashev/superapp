@@ -1,34 +1,30 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"log"
-	"time"
+	"net/http"
+
+	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/v5/middleware"
+
+	"superapp/handler"
 )
 
 func main() {
-	// Replace with your actual connection details
-	dsn := "postgres://user:password@localhost:6432/mydatabase?sslmode=disable"
+	// Create a new router
+	r := chi.NewRouter()
 
-	// Initialize the database
-	db, err := NewDatabase(dsn)
-	if err != nil {
-		log.Fatalf("Error initializing database: %v", err)
+	// Middlewares
+	r.Use(middleware.Logger) // Logs requests
+
+	// Register routes
+	r.Get("/products", handler.GetProductList)
+
+	// Start the server
+	addr := ":8080"
+	fmt.Printf("Server running on %s...\n", addr)
+	if err := http.ListenAndServe(addr, r); err != nil {
+		log.Fatal("Error starting the server: ", err)
 	}
-	defer db.Close()
-
-	fmt.Println("Successfully connected to the database!")
-
-	// Example: Query the database
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	var currentTime time.Time
-	err = db.Conn.QueryRowContext(ctx, "SELECT NOW()").Scan(&currentTime)
-	if err != nil {
-		log.Fatalf("Error executing query: %v", err)
-	}
-
-	fmt.Printf("Current time in database: %v\n", currentTime)
 }
