@@ -18,3 +18,13 @@ type Owner struct {
 	FirstName string `json:"first_name"`
 	LastName  string `json:"last_name"`
 }
+
+type OwnerProduct struct {
+	ID          int    `json:"id"`
+	Email       string `json:"email"`
+	FirstName   string `json:"first_name"`
+	LastName    string `json:"last_name"`
+	MiddleName  string `json:"middle_name"`
+	PhoneNumber string `json:"phone_number"`
+	Avatar      string `json:"avatar"`
+}
