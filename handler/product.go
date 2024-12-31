@@ -9,12 +9,9 @@ import (
 	"superapp/models"
 )
 
-// GetProductList handles GET /products requests
 func GetProductList(w http.ResponseWriter, r *http.Request) {
-	// Database connection string (change as per your setup)
 	dsn := "postgres://bookituser:Lenger1992@localhost:6432/bookitdb?sslmode=disable"
 
-	// Establish the connection using PgBouncer
 	database, err := store.NewDatabase(dsn)
 	if err != nil {
 		http.Error(w, "Error connecting to the database", http.StatusInternalServerError)
@@ -23,7 +20,6 @@ func GetProductList(w http.ResponseWriter, r *http.Request) {
 	}
 	defer database.Close()
 
-	// Fetch products from database
 	rows, err := database.Conn.Query(`
 		SELECT id, price_per_night, price_per_week, price_per_month, rooms_qty, guest_qty, bed_qty, bedroom_qty, toilet_qty,
 			bath_qty, city_id, lng, lat, is_active, priority, like_count, comments_ru, owner_id, type_id, guests_with_babies,
@@ -38,7 +34,6 @@ func GetProductList(w http.ResponseWriter, r *http.Request) {
 	}
 	defer rows.Close()
 
-	// Slice to hold the products
 	var products []models.Product
 	for rows.Next() {
 		var p models.Product
@@ -56,7 +51,6 @@ func GetProductList(w http.ResponseWriter, r *http.Request) {
 		products = append(products, p)
 	}
 
-	// Write the response
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(products); err != nil {
 		http.Error(w, "Error encoding response", http.StatusInternalServerError)

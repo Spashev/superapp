@@ -12,16 +12,12 @@ import (
 )
 
 func main() {
-	// Create a new router
 	r := chi.NewRouter()
 
-	// Middlewares
-	r.Use(middleware.Logger) // Logs requests
+	r.Use(middleware.Logger)
 
-	// Register routes
 	r.Get("/products", handler.GetProductList)
 
-	// Start the server
 	addr := ":8080"
 	fmt.Printf("Server running on %s...\n", addr)
 	if err := http.ListenAndServe(addr, r); err != nil {
