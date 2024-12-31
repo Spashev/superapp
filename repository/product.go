@@ -62,7 +62,8 @@ func (r *ProductRepository) GetAllProducts() ([]models.ProductPaginate, error) {
 			u.id, 
 			co.id,
 			ci.id,
-			img.id;
+			img.id
+		ORDER BY p.created_at;
 	`)
 	if err != nil {
 		return nil, err
