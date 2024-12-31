@@ -5,18 +5,21 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/go-chi/chi"
-	"github.com/go-chi/chi/v5/middleware"
-
-	"superapp/handler"
+	"superapp/cmd/router"
+	"superapp/config"
+	"superapp/db"
 )
 
 func main() {
-	r := chi.NewRouter()
+	cfg := config.NewConfig()
 
-	r.Use(middleware.Logger)
+	database, err := db.NewDatabase(cfg.DatabaseDSN)
+	if err != nil {
+		log.Fatalf("Failed to initialize the database: %v", err)
+	}
+	defer database.Close()
 
-	r.Get("/products", handler.GetProductList)
+	r := router.RegisterRoutes(database.Conn)
 
 	addr := ":8080"
 	fmt.Printf("Server running on %s...\n", addr)

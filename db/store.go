@@ -1,10 +1,9 @@
-package store
+package db
 
 import (
 	"context"
 	"database/sql"
 	"fmt"
-	"log"
 	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -35,9 +34,7 @@ func NewDatabase(dsn string) (*Database, error) {
 }
 
 func (db *Database) Close() {
-	if db.Conn != nil {
-		if err := db.Conn.Close(); err != nil {
-			log.Printf("Error closing the database connection: %v", err)
-		}
+	if err := db.Conn.Close(); err != nil {
+		fmt.Printf("Error closing the database: %v\n", err)
 	}
 }

@@ -4,9 +4,9 @@ import "time"
 
 type Product struct {
 	ID               int64     `json:"id"`
-	PricePerNight    int       `json:"price_per_night"`
-	PricePerWeek     *int      `json:"price_per_week"`
-	PricePerMonth    *int      `json:"price_per_month"`
+	PricePerNight    float64   `json:"price_per_night"`
+	PricePerWeek     *float64  `json:"price_per_week"`
+	PricePerMonth    *float64  `json:"price_per_month"`
 	RoomsQty         int       `json:"rooms_qty"`
 	GuestQty         int       `json:"guest_qty"`
 	BedQty           int       `json:"bed_qty"`
@@ -45,4 +45,26 @@ type Product struct {
 	Slug             *string   `json:"slug"`
 	CreatedAt        time.Time `json:"created_at"`
 	UpdatedAt        time.Time `json:"updated_at"`
+}
+
+type ProductPaginate struct {
+	ID             int64                  `json:"product_id"`
+	Slug           string                 `json:"slug"`
+	NameRU         string                 `json:"product_name"`
+	PricePerNight  float64                `json:"price_per_night"`
+	Owner          Owner                  `json:"owner"`
+	OwnerFirstName string                 `json:"owner_first_name"`
+	OwnerLastName  string                 `json:"owner_last_name"`
+	CountryName    string                 `json:"country_name"`
+	CityName       string                 `json:"city_name"`
+	DistrictRU     string                 `json:"district_ru"`
+	AddressRU      string                 `json:"address_ru"`
+	IsNew          bool                   `json:"is_new"`
+	Rating         float64                `json:"rating"`
+	BestProduct    bool                   `json:"best_product"`
+	Promotion      bool                   `json:"promotion"`
+	IsActive       bool                   `json:"is_active"`
+	Images         []ProductImagePaginate `json:"images"`
+	CreatedAt      time.Time              `json:"created_at"`
+	UpdatedAt      time.Time              `json:"updated_at"`
 }
