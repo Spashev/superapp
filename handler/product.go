@@ -5,7 +5,8 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"strings"
+
+	"github.com/go-chi/chi/v5"
 
 	"superapp/repository"
 	"superapp/service"
@@ -33,14 +34,7 @@ func GetProductList(db *sql.DB) http.HandlerFunc {
 
 func GetProductBySlug(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// slug := chi.URLParam(r, "slug")
-		parts := strings.Split(r.URL.Path, "/")
-		if len(parts) < 3 {
-			http.Error(w, "Invalid URL", http.StatusBadRequest)
-			return
-		}
-
-		slug := parts[2]
+		slug := chi.URLParam(r, "slug")
 		if slug == "" {
 			http.Error(w, "Slug is required", http.StatusBadRequest)
 			return
