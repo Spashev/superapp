@@ -9,7 +9,6 @@ import (
 
 type ProductRepository struct {
 	db *sql.DB
-	mu sync.Mutex
 }
 
 func NewProductRepository(db *sql.DB) *ProductRepository {
@@ -67,16 +66,15 @@ func (r *ProductRepository) GetAllProducts(page, limit int) ([]models.ProductPag
 		ORDER BY p.created_at
 		LIMIT $1 OFFSET $2;
 	`, limit, offset)
+
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	productsMap := make(map[int64]*models.ProductPaginate)
+	productsChan := make(chan models.ProductPaginate, limit)
+
 	var wg sync.WaitGroup
-
-	productsChan := make(chan *models.ProductPaginate)
-
 	for rows.Next() {
 		var p models.ProductPaginate
 		var image models.ProductImagePaginate
@@ -96,43 +94,34 @@ func (r *ProductRepository) GetAllProducts(page, limit int) ([]models.ProductPag
 		go func(productID int64, image models.ProductImagePaginate, owner models.Owner) {
 			defer wg.Done()
 
-			r.mu.Lock()
-			defer r.mu.Unlock()
-
-			if _, exists := productsMap[productID]; !exists {
-				productsMap[productID] = &models.ProductPaginate{
-					ID:            productID,
-					Slug:          p.Slug,
-					NameRU:        p.NameRU,
-					PricePerNight: p.PricePerNight,
-					CountryName:   p.CountryName,
-					CityName:      p.CityName,
-					Owner:         owner,
-					IsNew:         p.IsNew,
-					Rating:        p.Rating,
-					BestProduct:   p.BestProduct,
-					Promotion:     p.Promotion,
-					IsActive:      p.IsActive,
-				}
+			product := models.ProductPaginate{
+				ID:            p.ID,
+				Slug:          p.Slug,
+				NameRU:        p.NameRU,
+				PricePerNight: p.PricePerNight,
+				CountryName:   p.CountryName,
+				CityName:      p.CityName,
+				Owner:         owner,
+				IsNew:         p.IsNew,
+				Rating:        p.Rating,
+				BestProduct:   p.BestProduct,
+				Promotion:     p.Promotion,
+				IsActive:      p.IsActive,
+				Images:        []models.ProductImagePaginate{image},
 			}
 
-			productsMap[productID].Images = append(productsMap[productID].Images, image)
-			productsMap[productID].Owner = owner
-
+			productsChan <- product
 		}(p.ID, image, owner)
 	}
 
 	go func() {
 		wg.Wait()
-		for _, product := range productsMap {
-			productsChan <- product
-		}
 		close(productsChan)
 	}()
 
 	var products []models.ProductPaginate
 	for product := range productsChan {
-		products = append(products, *product)
+		products = append(products, product)
 	}
 
 	return products, nil

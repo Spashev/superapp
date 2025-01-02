@@ -29,7 +29,7 @@ type Product struct {
 	Promotion          bool                   `json:"promotion"`
 	Images             []ProductImagePaginate `json:"images"`
 	Type               ProductType            `json:"type"`
-	Conveniences       []Convenience          `json:"convenience"`
+	Conveniences       []Convenience          `json:"conveniences"`
 	Comments           []ProductComment       `json:"comments"`
 }
 

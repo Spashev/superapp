@@ -16,6 +16,7 @@ func RegisterRoutes(db *sql.DB) http.Handler {
 
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
+	r.Use(middleware.StripSlashes)
 
 	r.With(md.Paginate).Get("/products", handler.GetProductList(db))
 	r.Get("/products/{slug}", handler.GetProductBySlug(db))
