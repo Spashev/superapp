@@ -16,7 +16,8 @@ func NewProductRepository(db *sql.DB) *ProductRepository {
 	return &ProductRepository{db: db}
 }
 
-func (r *ProductRepository) GetAllProducts() ([]models.ProductPaginate, error) {
+func (r *ProductRepository) GetAllProducts(page, limit int) ([]models.ProductPaginate, error) {
+	offset := (page - 1) * limit
 	rows, err := r.db.Query(`
 		SELECT 
 			p.id AS product_id,
@@ -63,8 +64,9 @@ func (r *ProductRepository) GetAllProducts() ([]models.ProductPaginate, error) {
 			co.id,
 			ci.id,
 			img.id
-		ORDER BY p.created_at;
-	`)
+		ORDER BY p.created_at
+		LIMIT $1 OFFSET $2;
+	`, limit, offset)
 	if err != nil {
 		return nil, err
 	}

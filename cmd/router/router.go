@@ -8,6 +8,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 
 	"superapp/handler"
+	md "superapp/middleware"
 )
 
 func RegisterRoutes(db *sql.DB) http.Handler {
@@ -16,7 +17,7 @@ func RegisterRoutes(db *sql.DB) http.Handler {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
-	r.Get("/products", handler.GetProductList(db))
+	r.With(md.Paginate).Get("/products", handler.GetProductList(db))
 	r.Get("/products/{slug}", handler.GetProductBySlug(db))
 
 	return r

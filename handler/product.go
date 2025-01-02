@@ -14,10 +14,13 @@ import (
 
 func GetProductList(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		page := r.Context().Value("page").(int)
+		limit := r.Context().Value("limit").(int)
+
 		repo := repository.NewProductRepository(db)
 		productService := service.NewProductService(repo)
 
-		products, err := productService.GetAllProducts()
+		products, err := productService.GetAllProducts(page, limit)
 		if err != nil {
 			http.Error(w, "Failed to fetch products", http.StatusInternalServerError)
 			log.Println(err)
