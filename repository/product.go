@@ -58,7 +58,6 @@ func (r *ProductRepository) GetAllProducts(page, limit int) ([]models.ProductPag
 			u.id, 
 			co.id,
 			ci.id
-		ORDER BY p.created_at
 		LIMIT $1 OFFSET $2;
 	`, limit, offset)
 
