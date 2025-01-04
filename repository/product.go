@@ -17,6 +17,7 @@ func NewProductRepository(db *sql.DB) *ProductRepository {
 
 func (r *ProductRepository) GetAllProducts(page, limit int) ([]models.ProductPaginate, error) {
 	offset := (page - 1) * limit
+
 	rows, err := r.db.Query(`
 		SELECT 
 			p.id AS product_id,
@@ -38,12 +39,6 @@ func (r *ProductRepository) GetAllProducts(page, limit int) ([]models.ProductPag
 			p.best_product,
 			p.promotion,
 			p.is_active,
-			img.id AS image_id,
-			img.thumbnail,
-			img.mimetype,
-			img.is_label,
-			img.width,
-			img.height,
 			p.created_at,
 			p.updated_at
 		FROM 
@@ -56,13 +51,11 @@ func (r *ProductRepository) GetAllProducts(page, limit int) ([]models.ProductPag
 			FROM likes
 			GROUP BY product_id
 		) l ON p.id = l.product_id
-		LEFT JOIN images img ON p.id = img.product_id
 		GROUP BY 
 			p.id, 
 			u.id, 
 			co.id,
-			ci.id,
-			img.id
+			ci.id
 		ORDER BY p.created_at
 		LIMIT $1 OFFSET $2;
 	`, limit, offset)
@@ -72,64 +65,96 @@ func (r *ProductRepository) GetAllProducts(page, limit int) ([]models.ProductPag
 	}
 	defer rows.Close()
 
-	productsChan := make(chan models.ProductPaginate, limit)
-	baseURL := "http://localhost:9001/"
-
+	var products []models.ProductPaginate
 	var wg sync.WaitGroup
+	productCh := make(chan models.ProductPaginate, limit)
+
 	for rows.Next() {
-		var p models.ProductPaginate
-		var image models.ProductImagePaginate
+		var product models.ProductPaginate
 		var owner models.Owner
 
 		if err := rows.Scan(
-			&p.ID, &p.Slug, &p.NameRU, &p.PricePerNight, &owner.Email, &owner.FirstName, &owner.LastName,
-			&p.CountryName, &p.CityName, &p.DistrictRU, &p.AddressRU, &p.IsNew, &p.Rating, &p.BestProduct,
-			&p.Promotion, &p.IsActive, &image.ID, &image.Thumbnail, &image.MimeType, &image.IsLabel, &image.Width,
-			&image.Height, &p.CreatedAt, &p.UpdatedAt,
+			&product.ID, &product.Slug, &product.NameRU, &product.PricePerNight, &owner.Email, &owner.FirstName,
+			&owner.LastName, &product.CountryName, &product.CityName, &product.DistrictRU, &product.AddressRU,
+			&product.IsNew, &product.Rating, &product.BestProduct, &product.Promotion, &product.IsActive,
+			&product.CreatedAt, &product.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
 
+		product.Owner = owner
+
 		wg.Add(1)
-
-		go func(productID int64, image models.ProductImagePaginate, owner models.Owner) {
+		go func(product models.ProductPaginate) {
 			defer wg.Done()
-
-			if image.Thumbnail != "" {
-				image.Thumbnail = baseURL + image.Thumbnail
+			images, err := r.getImagesByProductID(product.ID)
+			if err != nil {
+				return
 			}
-
-			product := models.ProductPaginate{
-				ID:            p.ID,
-				Slug:          p.Slug,
-				NameRU:        p.NameRU,
-				PricePerNight: p.PricePerNight,
-				CountryName:   p.CountryName,
-				CityName:      p.CityName,
-				Owner:         owner,
-				IsNew:         p.IsNew,
-				Rating:        p.Rating,
-				BestProduct:   p.BestProduct,
-				Promotion:     p.Promotion,
-				IsActive:      p.IsActive,
-				Images:        []models.ProductImagePaginate{image},
-			}
-
-			productsChan <- product
-		}(p.ID, image, owner)
+			product.Images = images
+			productCh <- product
+		}(product)
 	}
 
 	go func() {
 		wg.Wait()
-		close(productsChan)
+		close(productCh)
 	}()
 
-	var products []models.ProductPaginate
-	for product := range productsChan {
+	for product := range productCh {
 		products = append(products, product)
 	}
 
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
 	return products, nil
+}
+
+func (r *ProductRepository) getImagesByProductID(productID int64) ([]models.ProductImagePaginate, error) {
+	rows, err := r.db.Query(`
+		SELECT 
+			id,
+			thumbnail,
+			mimetype,
+			is_label,
+			width,
+			height
+		FROM 
+			images
+		WHERE 
+			product_id = $1;
+	`, productID)
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	baseURL := "http://localhost:9001/"
+	var images []models.ProductImagePaginate
+
+	for rows.Next() {
+		var image models.ProductImagePaginate
+
+		if err := rows.Scan(&image.ID, &image.Thumbnail, &image.MimeType,
+			&image.IsLabel, &image.Width, &image.Height); err != nil {
+			return nil, err
+		}
+
+		if image.Thumbnail != "" {
+			image.Thumbnail = baseURL + image.Thumbnail
+		}
+
+		images = append(images, image)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return images, nil
 }
 
 func (r *ProductRepository) GetProductBySlug(slug string) (*models.Product, error) {
