@@ -1,1 +1,3 @@
 bin/bookit
+.env
+payload.json

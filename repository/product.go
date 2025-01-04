@@ -2,6 +2,8 @@ package repository
 
 import (
 	"database/sql"
+	"fmt"
+	"os"
 	"sync"
 
 	"superapp/models"
@@ -132,7 +134,11 @@ func (r *ProductRepository) getImagesByProductID(productID int64) ([]models.Prod
 	}
 	defer rows.Close()
 
-	baseURL := "http://localhost:9001/"
+	baseURL := os.Getenv("BASE_URL")
+	if baseURL == "" {
+		return nil, fmt.Errorf("BASE_URL is not set in environment")
+	}
+
 	var images []models.ProductImagePaginate
 
 	for rows.Next() {

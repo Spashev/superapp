@@ -5,10 +5,19 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/joho/godotenv"
+
 	"superapp/cmd/router"
 	"superapp/config"
 	"superapp/db"
 )
+
+func init() {
+	if err := godotenv.Load(); err != nil {
+		log.Println("No .env file found, using environment variables")
+	}
+
+}
 
 func main() {
 	cfg := config.NewConfig()
