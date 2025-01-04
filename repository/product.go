@@ -73,6 +73,7 @@ func (r *ProductRepository) GetAllProducts(page, limit int) ([]models.ProductPag
 	defer rows.Close()
 
 	productsChan := make(chan models.ProductPaginate, limit)
+	baseURL := "http://localhost:9001/"
 
 	var wg sync.WaitGroup
 	for rows.Next() {
@@ -93,6 +94,10 @@ func (r *ProductRepository) GetAllProducts(page, limit int) ([]models.ProductPag
 
 		go func(productID int64, image models.ProductImagePaginate, owner models.Owner) {
 			defer wg.Done()
+
+			if image.Thumbnail != "" {
+				image.Thumbnail = baseURL + image.Thumbnail
+			}
 
 			product := models.ProductPaginate{
 				ID:            p.ID,
