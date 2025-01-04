@@ -113,65 +113,12 @@ func (r *ProductRepository) GetAllProducts(page, limit int) ([]models.ProductPag
 	return products, nil
 }
 
-func (r *ProductRepository) getImagesByProductID(productID int64) ([]models.ProductImagePaginate, error) {
-	rows, err := r.db.Query(`
-		SELECT 
-			id,
-			thumbnail,
-			mimetype,
-			is_label,
-			width,
-			height
-		FROM 
-			images
-		WHERE 
-			product_id = $1;
-	`, productID)
-
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	baseURL := os.Getenv("BASE_URL")
-	if baseURL == "" {
-		return nil, fmt.Errorf("BASE_URL is not set in environment")
-	}
-
-	var images []models.ProductImagePaginate
-
-	for rows.Next() {
-		var image models.ProductImagePaginate
-
-		if err := rows.Scan(&image.ID, &image.Thumbnail, &image.MimeType,
-			&image.IsLabel, &image.Width, &image.Height); err != nil {
-			return nil, err
-		}
-
-		if image.Thumbnail != "" {
-			image.Thumbnail = baseURL + image.Thumbnail
-		}
-
-		images = append(images, image)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-
-	return images, nil
-}
-
 func (r *ProductRepository) GetProductBySlug(slug string) (*models.Product, error) {
 	var wg sync.WaitGroup
 	var mu sync.Mutex
 
 	var p models.Product
 	var owner models.OwnerProduct
-	var productType models.ProductType
-	var comments []models.ProductComment
-	var conveniences []models.Convenience
-	var images []models.ProductImagePaginate
 	var err error
 
 	wg.Add(1)
@@ -249,7 +196,7 @@ func (r *ProductRepository) GetProductBySlug(slug string) (*models.Product, erro
 				return
 			}
 			mu.Lock()
-			images, err = r.getImagesByProductID(int64(p.ID))
+			p.Images, err = r.getImagesByProductID(int64(p.ID))
 			if err != nil {
 				mu.Unlock()
 				return
@@ -261,106 +208,19 @@ func (r *ProductRepository) GetProductBySlug(slug string) (*models.Product, erro
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		cRows, queryErr := r.db.Query(`
-			SELECT 
-				c.id AS comment_id,
-				c.content AS comment_content,
-				c.rating AS comment_rating,
-				cu.email AS comment_user_email,
-				cu.first_name AS comment_first_name,
-				cu.last_name AS comment_last_name,
-				cu.avatar AS comment_avatar
-			FROM 
-				comments c
-			LEFT JOIN users cu ON cu.id = c.user_id
-			WHERE c.product_id = (SELECT id FROM products WHERE slug = $1);
-		`, slug)
-
-		if queryErr != nil {
-			err = queryErr
-			return
-		}
-		defer cRows.Close()
-
-		for cRows.Next() {
-			var comment models.ProductComment
-			var comment_user models.ProductCommentUser
-			if scanErr := cRows.Scan(
-				&comment.ID, &comment.Content, &comment.Rating,
-				&comment_user.Email, &comment_user.FirstName, &comment_user.LastName, &comment_user.Avatar,
-			); scanErr != nil {
-				err = scanErr
-				return
-			}
-			comment.User = comment_user
-			mu.Lock()
-			comments = append(comments, comment)
-			mu.Unlock()
-		}
+		p.Type, err = r.GetProductTypeBySlug(slug)
 	}()
 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		tRows, queryErr := r.db.Query(`
-			SELECT 
-				t.name_ru AS name,
-				t.icon AS icon
-			FROM 
-				types t
-			LEFT JOIN products p ON t.id = p.type_id
-			WHERE p.slug = $1;
-		`, slug)
-
-		if queryErr != nil {
-			err = queryErr
-			return
-		}
-		defer tRows.Close()
-
-		for tRows.Next() {
-			if scanErr := tRows.Scan(
-				&productType.Name, &productType.Icon,
-			); scanErr != nil {
-				err = scanErr
-				return
-			}
-		}
+		p.Comments, err = r.GetCommentsByProductSlug(slug)
 	}()
 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		pcRows, queryErr := r.db.Query(`
-			SELECT 
-				conv.id AS id,
-				conv.name_ru AS name,
-				conv.icon AS icon
-			FROM 
-				products_convenience pc
-			LEFT JOIN conveniences conv ON pc.convenience_id = conv.id
-			LEFT JOIN products p ON p.id = pc.product_id
-			WHERE p.slug = $1;
-		`, slug)
-
-		if queryErr != nil {
-			err = queryErr
-			return
-		}
-		defer pcRows.Close()
-
-		for pcRows.Next() {
-			var convenience models.Convenience
-			if scanErr := pcRows.Scan(
-				&convenience.ID, &convenience.Name, &convenience.Icon,
-			); scanErr != nil {
-				err = scanErr
-				return
-			}
-			mu.Lock()
-			conveniences = append(conveniences, convenience)
-			mu.Unlock()
-		}
+		p.Conveniences, err = r.GetConveniencesByProductSlug(slug)
 	}()
 
 	wg.Wait()
@@ -369,11 +229,152 @@ func (r *ProductRepository) GetProductBySlug(slug string) (*models.Product, erro
 		return nil, err
 	}
 
-	p.Images = images
-	p.Type = productType
-	p.Comments = comments
-	p.Conveniences = conveniences
 	p.Owner = owner
-
 	return &p, nil
+}
+
+func (r *ProductRepository) getImagesByProductID(productID int64) ([]models.ProductImagePaginate, error) {
+	rows, err := r.db.Query(`
+		SELECT 
+			id,
+			thumbnail,
+			mimetype,
+			is_label,
+			width,
+			height
+		FROM 
+			images
+		WHERE 
+			product_id = $1;
+	`, productID)
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	baseURL := os.Getenv("BASE_URL")
+	if baseURL == "" {
+		return nil, fmt.Errorf("BASE_URL is not set in environment")
+	}
+
+	var images []models.ProductImagePaginate
+
+	for rows.Next() {
+		var image models.ProductImagePaginate
+
+		if err := rows.Scan(&image.ID, &image.Thumbnail, &image.MimeType,
+			&image.IsLabel, &image.Width, &image.Height); err != nil {
+			return nil, err
+		}
+
+		if image.Thumbnail != "" {
+			image.Thumbnail = baseURL + image.Thumbnail
+		}
+
+		images = append(images, image)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return images, nil
+}
+
+func (r *ProductRepository) GetCommentsByProductSlug(slug string) ([]models.ProductComment, error) {
+	var comments []models.ProductComment
+
+	cRows, queryErr := r.db.Query(`
+		SELECT 
+			c.id AS comment_id,
+			c.content AS comment_content,
+			c.rating AS comment_rating,
+			cu.email AS comment_user_email,
+			cu.first_name AS comment_first_name,
+			cu.last_name AS comment_last_name,
+			cu.avatar AS comment_avatar
+		FROM 
+			comments c
+		LEFT JOIN users cu ON cu.id = c.user_id
+		WHERE c.product_id = (SELECT id FROM products WHERE slug = $1);
+	`, slug)
+
+	if queryErr != nil {
+		return nil, queryErr
+	}
+	defer cRows.Close()
+
+	for cRows.Next() {
+		var comment models.ProductComment
+		var commentUser models.ProductCommentUser
+		if scanErr := cRows.Scan(
+			&comment.ID, &comment.Content, &comment.Rating,
+			&commentUser.Email, &commentUser.FirstName, &commentUser.LastName, &commentUser.Avatar,
+		); scanErr != nil {
+			return nil, scanErr
+		}
+		comment.User = commentUser
+		comments = append(comments, comment)
+	}
+
+	return comments, nil
+}
+
+func (r *ProductRepository) GetProductTypeBySlug(slug string) (models.ProductType, error) {
+	var productType models.ProductType
+
+	tRows, queryErr := r.db.Query(`
+		SELECT 
+			t.name_ru AS name,
+			t.icon AS icon
+		FROM 
+			types t
+		LEFT JOIN products p ON t.id = p.type_id
+		WHERE p.slug = $1;
+	`, slug)
+
+	if queryErr != nil {
+		return productType, queryErr
+	}
+	defer tRows.Close()
+
+	if tRows.Next() {
+		if scanErr := tRows.Scan(&productType.Name, &productType.Icon); scanErr != nil {
+			return productType, scanErr
+		}
+	}
+
+	return productType, nil
+}
+
+func (r *ProductRepository) GetConveniencesByProductSlug(slug string) ([]models.Convenience, error) {
+	var conveniences []models.Convenience
+
+	pcRows, queryErr := r.db.Query(`
+		SELECT 
+			conv.id AS id,
+			conv.name_ru AS name,
+			conv.icon AS icon
+		FROM 
+			products_convenience pc
+		LEFT JOIN conveniences conv ON pc.convenience_id = conv.id
+		LEFT JOIN products p ON p.id = pc.product_id
+		WHERE p.slug = $1;
+	`, slug)
+
+	if queryErr != nil {
+		return nil, queryErr
+	}
+	defer pcRows.Close()
+
+	for pcRows.Next() {
+		var convenience models.Convenience
+		if scanErr := pcRows.Scan(&convenience.ID, &convenience.Name, &convenience.Icon); scanErr != nil {
+			return nil, scanErr
+		}
+		conveniences = append(conveniences, convenience)
+	}
+
+	return conveniences, nil
 }
