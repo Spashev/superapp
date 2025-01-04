@@ -211,13 +211,7 @@ func (r *ProductRepository) GetProductBySlug(slug string) (*models.Product, erro
 					ELSE false
 				END AS is_new,
 				p.best_product,
-				p.promotion,
-				img.id AS image_id,
-				img.thumbnail,
-				img.mimetype,
-				img.is_label,
-				img.width,
-				img.height
+				p.promotion
 			FROM 
 				products p
 			LEFT JOIN users u ON p.owner_id = u.id
@@ -228,14 +222,12 @@ func (r *ProductRepository) GetProductBySlug(slug string) (*models.Product, erro
 				FROM likes
 				GROUP BY product_id
 			) l ON p.id = l.product_id
-			LEFT JOIN images img ON p.id = img.product_id
 			WHERE p.slug = $1
 			GROUP BY 
 				p.id, 
 				u.id, 
 				co.id,
-				ci.id,
-				img.id
+				ci.id
 			ORDER BY p.created_at;
 		`, slug)
 
@@ -246,20 +238,22 @@ func (r *ProductRepository) GetProductBySlug(slug string) (*models.Product, erro
 		defer pRows.Close()
 
 		for pRows.Next() {
-			var image models.ProductImagePaginate
 			if scanErr := pRows.Scan(
 				&p.ID, &p.Slug, &p.Name, &p.PricePerNight, &p.PricePerWeek, &p.PricePerMonth,
 				&owner.ID, &owner.Email, &owner.FirstName, &owner.LastName, &owner.MiddleName, &owner.PhoneNumber, &owner.Avatar,
 				&p.RoomsQty, &p.GuestQty, &p.BedQty, &p.BedroomQty, &p.ToiletQty, &p.BathQty, &p.Description,
 				&p.Country, &p.City, &p.District, &p.Address, &p.LikeCount, &p.AverageLikesRating,
 				&p.PhoneNumber, &p.IsNew, &p.BestProduct, &p.Promotion,
-				&image.ID, &image.Thumbnail, &image.MimeType, &image.IsLabel, &image.Width, &image.Height,
 			); scanErr != nil {
 				err = scanErr
 				return
 			}
 			mu.Lock()
-			images = append(images, image)
+			images, err = r.getImagesByProductID(int64(p.ID))
+			if err != nil {
+				mu.Unlock()
+				return
+			}
 			mu.Unlock()
 		}
 	}()
@@ -298,6 +292,7 @@ func (r *ProductRepository) GetProductBySlug(slug string) (*models.Product, erro
 				err = scanErr
 				return
 			}
+			comment.User = comment_user
 			mu.Lock()
 			comments = append(comments, comment)
 			mu.Unlock()
