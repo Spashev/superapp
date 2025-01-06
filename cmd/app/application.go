@@ -25,18 +25,16 @@ func (a *App) Run() {
 	}
 	defer database.Close()
 
-	r := router.RegisterRoutes(database.Conn)
+	fmt.Printf("Server running on %s...\n", ":8080")
 
-	addr := ":8080"
-	fmt.Printf("Server running on %s...\n", addr)
+	r := router.RegisterRoutes(database.Conn)
 	a.http = &http.Server{
-		Addr:           addr,
+		Addr:           ":8080",
 		MaxHeaderBytes: 1 << 20,
 		ReadTimeout:    10 * time.Second,
 		WriteTimeout:   10 * time.Second,
 		Handler:        r,
 	}
-
 	if err := a.http.ListenAndServe(); err != nil {
 		log.Fatal("Error starting the server: ", err)
 	}
