@@ -8,8 +8,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"superapp/repository"
-	"superapp/service"
+	"superapp/internal/repository"
+	"superapp/internal/service"
 )
 
 func GetProductList(db *sql.DB) http.HandlerFunc {

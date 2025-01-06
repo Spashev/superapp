@@ -1,8 +1,8 @@
 package service
 
 import (
-	"superapp/models"
-	"superapp/repository"
+	"superapp/internal/models"
+	"superapp/internal/repository"
 )
 
 type ProductService struct {

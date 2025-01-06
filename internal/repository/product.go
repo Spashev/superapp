@@ -6,7 +6,7 @@ import (
 	"os"
 	"sync"
 
-	"superapp/models"
+	"superapp/internal/models"
 )
 
 type ProductRepository struct {

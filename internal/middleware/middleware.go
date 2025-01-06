@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strings"
 
-	"superapp/util/token"
+	"superapp/internal/util/token"
 )
 
 type authKey struct{}

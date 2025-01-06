@@ -7,8 +7,8 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 
-	"superapp/handler"
-	md "superapp/middleware"
+	"superapp/internal/handler"
+	md "superapp/internal/middleware"
 )
 
 func RegisterRoutes(db *sql.DB) http.Handler {

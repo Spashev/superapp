@@ -7,9 +7,9 @@ import (
 
 	"github.com/joho/godotenv"
 
+	"superapp/cmd/server/router"
 	"superapp/config"
-	"superapp/db"
-	"superapp/router"
+	"superapp/internal/db"
 )
 
 func init() {
