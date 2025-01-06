@@ -13,9 +13,9 @@ ifeq (manage,$(firstword $(MAKECMDGOALS)))
 endif
 
 run: ## Run go server
-	go run ./cmd/app/main.go
+	go run ./cmd/main.go
 build: ## Build project
-	go build -o ./bin/bookit ./cmd/app/main.go
+	go build -o ./bin/bookit ./cmd/main.go
 test: ## Run all tests
 	go test -v -race -timeout 30s ./...
 

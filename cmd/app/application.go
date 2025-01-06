@@ -1,25 +1,22 @@
-package main
+package app
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
-
-	"github.com/joho/godotenv"
+	"time"
 
 	"superapp/cmd/app/router"
 	"superapp/config"
 	"superapp/internal/db"
 )
 
-func init() {
-	if err := godotenv.Load(); err != nil {
-		log.Println("No .env file found, using environment variables")
-	}
-
+type App struct {
+	http *http.Server
 }
 
-func main() {
+func (a *App) Run() {
 	cfg := config.NewConfig()
 
 	database, err := db.NewDatabase(cfg.DatabaseDSN)
@@ -32,7 +29,19 @@ func main() {
 
 	addr := ":8080"
 	fmt.Printf("Server running on %s...\n", addr)
-	if err := http.ListenAndServe(addr, r); err != nil {
+	a.http = &http.Server{
+		Addr:           addr,
+		MaxHeaderBytes: 1 << 20,
+		ReadTimeout:    10 * time.Second,
+		WriteTimeout:   10 * time.Second,
+		Handler:        r,
+	}
+
+	if err := a.http.ListenAndServe(); err != nil {
 		log.Fatal("Error starting the server: ", err)
 	}
+}
+
+func (a *App) Shotdown(ctx context.Context) error {
+	return a.http.Shutdown(ctx)
 }
