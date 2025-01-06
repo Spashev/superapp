@@ -7,7 +7,7 @@ import (
 
 	"github.com/joho/godotenv"
 
-	"superapp/cmd/server/router"
+	"superapp/cmd/app/router"
 	"superapp/config"
 	"superapp/internal/db"
 )
