@@ -208,19 +208,19 @@ func (r *ProductRepository) GetProductBySlug(slug string) (*models.Product, erro
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		p.Type, err = r.GetProductTypeBySlug(slug)
+		p.Type, err = r.getProductTypeBySlug(slug)
 	}()
 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		p.Comments, err = r.GetCommentsByProductSlug(slug)
+		p.Comments, err = r.getCommentsByProductSlug(slug)
 	}()
 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		p.Conveniences, err = r.GetConveniencesByProductSlug(slug)
+		p.Conveniences, err = r.getConveniencesByProductSlug(slug)
 	}()
 
 	wg.Wait()
@@ -282,7 +282,7 @@ func (r *ProductRepository) getImagesByProductID(productID int64) ([]models.Prod
 	return images, nil
 }
 
-func (r *ProductRepository) GetCommentsByProductSlug(slug string) ([]models.ProductComment, error) {
+func (r *ProductRepository) getCommentsByProductSlug(slug string) ([]models.ProductComment, error) {
 	var comments []models.ProductComment
 
 	cRows, queryErr := r.db.Query(`
@@ -321,7 +321,7 @@ func (r *ProductRepository) GetCommentsByProductSlug(slug string) ([]models.Prod
 	return comments, nil
 }
 
-func (r *ProductRepository) GetProductTypeBySlug(slug string) (models.ProductType, error) {
+func (r *ProductRepository) getProductTypeBySlug(slug string) (models.ProductType, error) {
 	var productType models.ProductType
 
 	tRows, queryErr := r.db.Query(`
@@ -348,7 +348,7 @@ func (r *ProductRepository) GetProductTypeBySlug(slug string) (models.ProductTyp
 	return productType, nil
 }
 
-func (r *ProductRepository) GetConveniencesByProductSlug(slug string) ([]models.Convenience, error) {
+func (r *ProductRepository) getConveniencesByProductSlug(slug string) ([]models.Convenience, error) {
 	var conveniences []models.Convenience
 
 	pcRows, queryErr := r.db.Query(`
