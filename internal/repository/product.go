@@ -20,12 +20,6 @@ func NewProductRepository(db *sql.DB) *ProductRepository {
 func (r *ProductRepository) GetAllProducts(page, limit int) (*models.ProductPaginate, error) {
 	offset := (page - 1) * limit
 
-	var totalCount int64
-	err := r.db.QueryRow(`SELECT COUNT(id) FROM products`).Scan(&totalCount)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get total products count: %v", err)
-	}
-
 	rows, err := r.db.Query(`
 		SELECT 
 			p.id AS product_id,
@@ -48,7 +42,8 @@ func (r *ProductRepository) GetAllProducts(page, limit int) (*models.ProductPagi
 			p.promotion,
 			p.is_active,
 			p.created_at,
-			p.updated_at
+			p.updated_at,
+			COUNT(*) OVER() AS total_count
 		FROM 
 			products p
 		LEFT JOIN users u ON p.owner_id = u.id
@@ -64,6 +59,7 @@ func (r *ProductRepository) GetAllProducts(page, limit int) (*models.ProductPagi
 			u.id, 
 			co.id,
 			ci.id
+		ORDER BY p.id ASC
 		LIMIT $1 OFFSET $2;
 	`, limit, offset)
 
@@ -76,6 +72,7 @@ func (r *ProductRepository) GetAllProducts(page, limit int) (*models.ProductPagi
 	var products []models.Products
 	var wg sync.WaitGroup
 	productCh := make(chan models.Products, limit)
+	var totalCount int64
 
 	for rows.Next() {
 		var product models.Products
@@ -85,7 +82,7 @@ func (r *ProductRepository) GetAllProducts(page, limit int) (*models.ProductPagi
 			&product.ID, &product.Slug, &product.NameRU, &product.PricePerNight, &owner.Email, &owner.FirstName,
 			&owner.LastName, &product.CountryName, &product.CityName, &product.DistrictRU, &product.AddressRU,
 			&product.IsNew, &product.Rating, &product.BestProduct, &product.Promotion, &product.IsActive,
-			&product.CreatedAt, &product.UpdatedAt,
+			&product.CreatedAt, &product.UpdatedAt, &totalCount,
 		); err != nil {
 			return nil, err
 		}
@@ -115,6 +112,14 @@ func (r *ProductRepository) GetAllProducts(page, limit int) (*models.ProductPagi
 
 	if err := rows.Err(); err != nil {
 		return nil, err
+	}
+
+	for i := 0; i < len(products); i++ {
+		for j := 0; j < len(products)-i-1; j++ {
+			if products[j].ID > products[j+1].ID {
+				products[j], products[j+1] = products[j+1], products[j]
+			}
+		}
 	}
 
 	baseURL := os.Getenv("BASE_URL")
