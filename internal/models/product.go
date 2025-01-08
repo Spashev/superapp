@@ -34,6 +34,13 @@ type Product struct {
 }
 
 type ProductPaginate struct {
+	Count    int64      `json:"count"`
+	Next     string     `json:"next"`
+	Previous string     `json:"previous"`
+	Results  []Products `json:"results"`
+}
+
+type Products struct {
 	ID             int64                  `json:"product_id"`
 	Slug           string                 `json:"slug"`
 	NameRU         string                 `json:"product_name"`

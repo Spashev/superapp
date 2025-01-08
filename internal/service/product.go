@@ -13,7 +13,7 @@ func NewProductService(repo *repository.ProductRepository) *ProductService {
 	return &ProductService{repo: repo}
 }
 
-func (s *ProductService) GetAllProducts(page, limit int) ([]models.ProductPaginate, error) {
+func (s *ProductService) GetAllProducts(page, limit int) (*models.ProductPaginate, error) {
 	return s.repo.GetAllProducts(page, limit)
 }
 

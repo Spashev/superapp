@@ -17,8 +17,14 @@ func NewProductRepository(db *sql.DB) *ProductRepository {
 	return &ProductRepository{db: db}
 }
 
-func (r *ProductRepository) GetAllProducts(page, limit int) ([]models.ProductPaginate, error) {
+func (r *ProductRepository) GetAllProducts(page, limit int) (*models.ProductPaginate, error) {
 	offset := (page - 1) * limit
+
+	var totalCount int64
+	err := r.db.QueryRow(`SELECT COUNT(id) FROM products`).Scan(&totalCount)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get total products count: %v", err)
+	}
 
 	rows, err := r.db.Query(`
 		SELECT 
@@ -66,12 +72,13 @@ func (r *ProductRepository) GetAllProducts(page, limit int) ([]models.ProductPag
 	}
 	defer rows.Close()
 
-	var products []models.ProductPaginate
+	var productPaginate models.ProductPaginate
+	var products []models.Products
 	var wg sync.WaitGroup
-	productCh := make(chan models.ProductPaginate, limit)
+	productCh := make(chan models.Products, limit)
 
 	for rows.Next() {
-		var product models.ProductPaginate
+		var product models.Products
 		var owner models.Owner
 
 		if err := rows.Scan(
@@ -86,7 +93,7 @@ func (r *ProductRepository) GetAllProducts(page, limit int) ([]models.ProductPag
 		product.Owner = owner
 
 		wg.Add(1)
-		go func(product models.ProductPaginate) {
+		go func(product models.Products) {
 			defer wg.Done()
 			images, err := r.getImagesByProductID(product.ID)
 			if err != nil {
@@ -110,7 +117,26 @@ func (r *ProductRepository) GetAllProducts(page, limit int) ([]models.ProductPag
 		return nil, err
 	}
 
-	return products, nil
+	baseURL := os.Getenv("BASE_URL")
+	next := ""
+	if int64(offset+limit) < totalCount {
+		next = fmt.Sprintf("%s/products/get?limit=%d&offset=%d", baseURL, limit, offset+limit)
+	}
+	previous := ""
+	if offset > 0 {
+		prevOffset := offset - limit
+		if prevOffset < 0 {
+			prevOffset = 0
+		}
+		previous = fmt.Sprintf("%s?limit=%d&offset=%d", baseURL, limit, prevOffset)
+	}
+
+	productPaginate.Count = totalCount
+	productPaginate.Results = products
+	productPaginate.Next = next
+	productPaginate.Previous = previous
+
+	return &productPaginate, nil
 }
 
 func (r *ProductRepository) GetProductBySlug(slug string) (*models.Product, error) {
@@ -253,9 +279,9 @@ func (r *ProductRepository) getImagesByProductID(productID int64) ([]models.Prod
 	}
 	defer rows.Close()
 
-	baseURL := os.Getenv("BASE_URL")
-	if baseURL == "" {
-		return nil, fmt.Errorf("BASE_URL is not set in environment")
+	imageBaseURL := os.Getenv("IMAGE_BASE_URL")
+	if imageBaseURL == "" {
+		return nil, fmt.Errorf("IMAGE_BASE_URL is not set in environment")
 	}
 
 	var images []models.ProductImagePaginate
@@ -269,7 +295,7 @@ func (r *ProductRepository) getImagesByProductID(productID int64) ([]models.Prod
 		}
 
 		if image.Thumbnail != "" {
-			image.Thumbnail = baseURL + image.Thumbnail
+			image.Thumbnail = imageBaseURL + image.Thumbnail
 		}
 
 		images = append(images, image)
