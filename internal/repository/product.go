@@ -24,6 +24,13 @@ func (r *ProductRepository) GetAllProducts(page, limit int) (*models.ProductsPag
 		SELECT 
 			p.id,
 			p.slug,
+			u.id AS "owner.id",
+			u.email AS "owner.email",
+			u.first_name AS "owner.first_name",
+			u.last_name AS "owner.last_name",
+			u.middle_name AS "owner.middle_name",
+			u.phone_number AS "owner.phone_number",
+			u.avatar AS "owner.avatar",
 			p.name_ru AS name,
 			p.price_per_night,
 			co.name_ru AS country,
@@ -38,14 +45,7 @@ func (r *ProductRepository) GetAllProducts(page, limit int) (*models.ProductsPag
 			p.best_product,
 			p.promotion,
 			p.is_active,
-			COUNT(*) OVER() AS total_count,
-			u.id AS "owner.id",
-			u.email AS "owner.email",
-			u.first_name AS "owner.first_name",
-			u.last_name AS "owner.last_name",
-			u.middle_name AS "owner.middle_name",
-			u.phone_number AS "owner.phone_number",
-			u.avatar AS "owner.avatar"
+			COUNT(*) OVER() AS total_count
 		FROM 
 			products p
 		LEFT JOIN users u ON p.owner_id = u.id
@@ -129,13 +129,13 @@ func (r *ProductRepository) GetProductBySlug(slug string) (*models.Product, erro
 			p.price_per_night,
 			p.price_per_week,
 			p.price_per_month,
-			u.id AS user_id,
-			u.email AS email,
-			u.first_name,
-			u.last_name,
-			u.middle_name,
-			u.phone_number,
-			u.avatar,
+			u.id AS "owner.id",
+			u.email AS "owner.email",
+			u.first_name AS "owner.first_name",
+			u.last_name AS "owner.last_name",
+			u.middle_name AS "owner.middle_name",
+			u.phone_number AS "owner.phone_number",
+			u.avatar AS "owner.avatar",
 			p.rooms_qty,
 			p.guest_qty,
 			p.bed_qty,
@@ -157,7 +157,8 @@ func (r *ProductRepository) GetProductBySlug(slug string) (*models.Product, erro
 				ELSE false
 			END AS is_new,
 			p.best_product,
-			p.promotion
+			p.promotion,
+			p.type_id
 		FROM 
 			products p
 		LEFT JOIN users u ON p.owner_id = u.id
@@ -168,7 +169,7 @@ func (r *ProductRepository) GetProductBySlug(slug string) (*models.Product, erro
 			FROM likes
 			GROUP BY product_id
 		) l ON p.id = l.product_id
-		WHERE p.slug = :slug
+		WHERE p.slug = $1
 		GROUP BY 
 			p.id, 
 			u.id, 
@@ -177,19 +178,15 @@ func (r *ProductRepository) GetProductBySlug(slug string) (*models.Product, erro
 		ORDER BY p.created_at;
 	`
 
-	params := map[string]interface{}{
-		"slug": slug,
-	}
-
 	var product models.Product
-	err := r.db.QueryRowx(query, params).StructScan(&product)
+	err := r.db.QueryRowx(query, slug).StructScan(&product)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch product by slug: %w", err)
 	}
 
 	product.Images, _ = r.getImagesByProductID(product.Id)
-	product.ProductComments, _ = r.getCommentsByProductId(product.Id)
-	productType, _ := r.getProductTypeById(product.Id)
+	product.Comments, _ = r.getCommentsByProductId(product.Id)
+	productType, _ := r.getProductTypeById(product.Type_id)
 	if productType != nil {
 		product.Type = *productType
 	}
@@ -230,10 +227,11 @@ func (r *ProductRepository) getCommentsByProductId(product_id int64) ([]models.P
 			c.content,
 			c.rating, 
 			c.created_at,
-			u.email AS 'user.emai',
-			u.first_name AS 'user.first_name',
-			u.last_name AS 'user.last_name',
-			u.avatar AS 'user.avatar',
+			u.id AS "user.id",
+			u.email AS "user.email",
+			u.first_name AS "user.first_name",
+			u.last_name AS "user.last_name",
+			u.avatar AS "user.avatar"
 		FROM 
 			comments AS c
 		LEFT JOIN users AS u ON u.id = c.user_id
@@ -252,11 +250,13 @@ func (r *ProductRepository) getCommentsByProductId(product_id int64) ([]models.P
 
 func (r *ProductRepository) getProductTypeById(product_id int64) (*models.ProductType, error) {
 	query := `
-		SELECT id, name
+		SELECT 
+			id,
+			icon,
+			name_ru AS name
 		FROM types
-		WHERE product_id = $1;
+		WHERE id = $1;
 	`
-
 	var productType models.ProductType
 	err := r.db.Get(&productType, query, product_id)
 	if err != nil {
@@ -274,13 +274,13 @@ func (r *ProductRepository) getConveniencesByProductId(product_id int64) ([]mode
 
 	query := `
 		SELECT 
-			c.id, 
-			c.name, 
-			c.icon
-		FROM conveniences c
-		INNER JOIN product_conveniences pc ON c.id = pc.convenience_id
-		INNER JOIN products p ON pc.product_id = p.id
-		WHERE p.product_id = $1;
+			c.id,
+			c.icon,
+			c.slug,
+			c.name_ru AS name
+		FROM products_convenience pc
+		INNER JOIN conveniences c ON c.id = pc.convenience_id
+		WHERE pc.product_id = $1;
 	`
 
 	var conveniences []models.Convenience

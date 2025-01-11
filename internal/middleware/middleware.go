@@ -14,15 +14,12 @@ type authKey struct{}
 func GetAuthMiddlewareFunc(tokenMaker *token.JWTMaker) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// read the authorization header
-			// verify the token
 			claims, err := verifyClaimsFromAuthHeader(r, tokenMaker)
 			if err != nil {
 				http.Error(w, fmt.Sprintf("error verifying token: %v", err), http.StatusUnauthorized)
 				return
 			}
 
-			// pass the payload/claims down the context
 			ctx := context.WithValue(r.Context(), authKey{}, claims)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
@@ -32,8 +29,6 @@ func GetAuthMiddlewareFunc(tokenMaker *token.JWTMaker) func(http.Handler) http.H
 func GetAdminMiddlewareFunc(tokenMaker *token.JWTMaker) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// read the authorization header
-			// verify the token
 			claims, err := verifyClaimsFromAuthHeader(r, tokenMaker)
 			if err != nil {
 				http.Error(w, fmt.Sprintf("error verifying token: %v", err), http.StatusUnauthorized)
@@ -45,7 +40,6 @@ func GetAdminMiddlewareFunc(tokenMaker *token.JWTMaker) func(http.Handler) http.
 				return
 			}
 
-			// pass the payload/claims down the context
 			ctx := context.WithValue(r.Context(), authKey{}, claims)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
