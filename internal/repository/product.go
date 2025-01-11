@@ -26,9 +26,6 @@ func (r *ProductRepository) GetAllProducts(page, limit int) (*models.ProductPagi
 			p.slug,
 			p.name_ru AS product_name,
 			p.price_per_night,
-			u.email AS email,
-			u.first_name AS first_name,
-			u.last_name AS last_name,
 			co.name_ru AS country_name,
 			ci.name_ru AS city_name,
 			p.district_ru,
@@ -43,7 +40,14 @@ func (r *ProductRepository) GetAllProducts(page, limit int) (*models.ProductPagi
 			p.is_active,
 			p.created_at,
 			p.updated_at,
-			COUNT(*) OVER() AS total_count
+			COUNT(*) OVER() AS total_count,
+			u.id AS user_id,
+			u.email AS email,
+			u.first_name,
+			u.last_name,
+			u.middle_name,
+			u.phone_number,
+			u.avatar
 		FROM 
 			products p
 		LEFT JOIN users u ON p.owner_id = u.id
@@ -76,13 +80,13 @@ func (r *ProductRepository) GetAllProducts(page, limit int) (*models.ProductPagi
 
 	for rows.Next() {
 		var product models.Products
-		var owner models.Owner
+		var owner models.OwnerProduct
 
 		if err := rows.Scan(
-			&product.ID, &product.Slug, &product.NameRU, &product.PricePerNight, &owner.Email, &owner.FirstName,
-			&owner.LastName, &product.CountryName, &product.CityName, &product.DistrictRU, &product.AddressRU,
-			&product.IsNew, &product.Rating, &product.BestProduct, &product.Promotion, &product.IsActive,
-			&product.CreatedAt, &product.UpdatedAt, &totalCount,
+			&product.ID, &product.Slug, &product.NameRU, &product.PricePerNight, &product.CountryName,
+			&product.CityName, &product.DistrictRU, &product.AddressRU, &product.IsNew, &product.Rating,
+			&product.BestProduct, &product.Promotion, &product.IsActive, &product.CreatedAt, &product.UpdatedAt, &totalCount,
+			&owner.ID, &owner.Email, &owner.FirstName, &owner.LastName, &owner.MiddleName, &owner.PhoneNumber, &owner.Avatar,
 		); err != nil {
 			return nil, err
 		}
