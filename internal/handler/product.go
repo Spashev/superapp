@@ -1,18 +1,18 @@
 package handler
 
 import (
-	"database/sql"
 	"encoding/json"
 	"log"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/jmoiron/sqlx"
 
 	"superapp/internal/repository"
 	"superapp/internal/service"
 )
 
-func GetProductList(db *sql.DB) http.HandlerFunc {
+func GetProductList(db *sqlx.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		page := r.Context().Value("page").(int)
 		limit := r.Context().Value("limit").(int)
@@ -35,7 +35,7 @@ func GetProductList(db *sql.DB) http.HandlerFunc {
 	}
 }
 
-func GetProductBySlug(db *sql.DB) http.HandlerFunc {
+func GetProductBySlug(db *sqlx.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		slug := chi.URLParam(r, "slug")
 		if slug == "" {

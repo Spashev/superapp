@@ -1,30 +1,24 @@
 package models
 
 type User struct {
-	Email       string `json:"email"`
-	FirstName   string `json:"first_name"`
-	LastName    string `json:"last_name"`
-	MiddleName  string `json:"middle_name"`
-	DateOfBirth string `json:"date_of_birth"`
-	PhoneNumber string `json:"phone_number"`
-	Avatar      string `json:"avatar"`
-	IIN         string `json:"iin"`
-	Role        string `json:"role"`
-	IsActive    string `json:"is_active"`
-}
-
-type Owner struct {
-	Email     string `json:"email"`
-	FirstName string `json:"first_name"`
-	LastName  string `json:"last_name"`
+	Email         string `json:"email"`
+	First_name    string `json:"first_name"`
+	Last_name     string `json:"last_name"`
+	Middle_name   string `json:"middle_name"`
+	Date_of_birth string `json:"date_of_birth"`
+	Phone_number  string `json:"phone_number"`
+	Avatar        string `json:"avatar"`
+	IIN           string `json:"iin"`
+	Role          string `json:"role"`
+	Is_active     string `json:"is_active"`
 }
 
 type OwnerProduct struct {
-	ID          int    `json:"id"`
-	Email       string `json:"email"`
-	FirstName   string `json:"first_name"`
-	LastName    string `json:"last_name"`
-	MiddleName  string `json:"middle_name"`
-	PhoneNumber string `json:"phone_number"`
-	Avatar      string `json:"avatar"`
+	Id           int64  `json:"id"`
+	Email        string `json:"email"`
+	First_name   string `json:"first_name"`
+	Last_name    string `json:"last_name"`
+	Middle_name  string `json:"middle_name"`
+	Phone_number string `json:"phone_number"`
+	Avatar       string `json:"avatar"`
 }

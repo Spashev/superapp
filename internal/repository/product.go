@@ -1,35 +1,35 @@
 package repository
 
 import (
-	"database/sql"
 	"fmt"
 	"os"
-	"sync"
+
+	"github.com/jmoiron/sqlx"
 
 	"superapp/internal/models"
 )
 
 type ProductRepository struct {
-	db *sql.DB
+	db *sqlx.DB
 }
 
-func NewProductRepository(db *sql.DB) *ProductRepository {
+func NewProductRepository(db *sqlx.DB) *ProductRepository {
 	return &ProductRepository{db: db}
 }
 
 func (r *ProductRepository) GetAllProducts(page, limit int) (*models.ProductsPaginate, error) {
 	offset := (page - 1) * limit
 
-	rows, err := r.db.Query(`
+	query := `
 		SELECT 
-			p.id AS product_id,
+			p.id,
 			p.slug,
-			p.name_ru AS product_name,
+			p.name_ru AS name,
 			p.price_per_night,
-			co.name_ru AS country_name,
-			ci.name_ru AS city_name,
-			p.district_ru,
-			p.address_ru,
+			co.name_ru AS country,
+			ci.name_ru AS city,
+			p.district_ru AS district,
+			p.address_ru AS address,
 			CASE
 				WHEN p.created_at >= NOW() - INTERVAL '10 days' THEN true
 				ELSE false
@@ -38,16 +38,14 @@ func (r *ProductRepository) GetAllProducts(page, limit int) (*models.ProductsPag
 			p.best_product,
 			p.promotion,
 			p.is_active,
-			p.created_at,
-			p.updated_at,
 			COUNT(*) OVER() AS total_count,
-			u.id AS user_id,
-			u.email AS email,
-			u.first_name,
-			u.last_name,
-			u.middle_name,
-			u.phone_number,
-			u.avatar
+			u.id AS "owner.id",
+			u.email AS "owner.email",
+			u.first_name AS "owner.first_name",
+			u.last_name AS "owner.last_name",
+			u.middle_name AS "owner.middle_name",
+			u.phone_number AS "owner.phone_number",
+			u.avatar AS "owner.avatar"
 		FROM 
 			products p
 		LEFT JOIN users u ON p.owner_id = u.id
@@ -64,58 +62,40 @@ func (r *ProductRepository) GetAllProducts(page, limit int) (*models.ProductsPag
 			co.id,
 			ci.id
 		ORDER BY p.id ASC
-		LIMIT $1 OFFSET $2;
-	`, limit, offset)
+		LIMIT :limit OFFSET :offset;
+	`
 
+	params := map[string]interface{}{
+		"limit":  limit,
+		"offset": offset,
+	}
+
+	rows, err := r.db.NamedQuery(query, params)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to execute query: %w", err)
 	}
 	defer rows.Close()
 
-	var ProductsPaginate models.ProductsPaginate
 	var products []models.Products
-	var wg sync.WaitGroup
-	productCh := make(chan models.Products, limit)
 	var totalCount int64
-
 	for rows.Next() {
 		var product models.Products
-		var owner models.OwnerProduct
 
-		if err := rows.Scan(
-			&product.ID, &product.Slug, &product.NameRU, &product.PricePerNight, &product.CountryName,
-			&product.CityName, &product.DistrictRU, &product.AddressRU, &product.IsNew, &product.Rating,
-			&product.BestProduct, &product.Promotion, &product.IsActive, &product.CreatedAt, &product.UpdatedAt, &totalCount,
-			&owner.ID, &owner.Email, &owner.FirstName, &owner.LastName, &owner.MiddleName, &owner.PhoneNumber, &owner.Avatar,
-		); err != nil {
-			return nil, err
+		err = rows.StructScan(&product)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan product and owner: %w", err)
 		}
 
-		product.Owner = owner
+		images, err := r.getImagesByProductID(product.Id)
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetch images for product %d: %w", product.Id, err)
+		}
 
-		wg.Add(1)
-		go func(product models.Products) {
-			defer wg.Done()
-			images, err := r.getImagesByProductID(product.ID)
-			if err != nil {
-				return
-			}
-			product.Images = images
-			productCh <- product
-		}(product)
-	}
+		product.Images = images
 
-	go func() {
-		wg.Wait()
-		close(productCh)
-	}()
-
-	for product := range productCh {
 		products = append(products, product)
-	}
 
-	if err := rows.Err(); err != nil {
-		return nil, err
+		totalCount = product.Total_count
 	}
 
 	baseURL := os.Getenv("BASE_URL")
@@ -129,290 +109,188 @@ func (r *ProductRepository) GetAllProducts(page, limit int) (*models.ProductsPag
 		if prevOffset < 0 {
 			prevOffset = 0
 		}
-		previous = fmt.Sprintf("%s?limit=%d&offset=%d", baseURL, limit, prevOffset)
+		previous = fmt.Sprintf("%s/products/get?limit=%d&offset=%d", baseURL, limit, prevOffset)
 	}
 
-	ProductsPaginate.Count = totalCount
-	ProductsPaginate.Results = products
-	ProductsPaginate.Next = next
-	ProductsPaginate.Previous = previous
-
-	return &ProductsPaginate, nil
+	return &models.ProductsPaginate{
+		Count:    totalCount,
+		Results:  products,
+		Next:     next,
+		Previous: previous,
+	}, nil
 }
 
 func (r *ProductRepository) GetProductBySlug(slug string) (*models.Product, error) {
-	var wg sync.WaitGroup
-	var mu sync.Mutex
+	query := `
+		SELECT 
+			p.id,
+			p.slug,
+			p.name_ru AS name,
+			p.price_per_night,
+			p.price_per_week,
+			p.price_per_month,
+			u.id AS user_id,
+			u.email AS email,
+			u.first_name,
+			u.last_name,
+			u.middle_name,
+			u.phone_number,
+			u.avatar,
+			p.rooms_qty,
+			p.guest_qty,
+			p.bed_qty,
+			p.bedroom_qty,
+			p.toilet_qty,
+			p.bath_qty,
+			p.description_ru AS description,
+			co.name_ru AS country,
+			ci.name_ru AS city,
+			p.district_ru AS district,
+			p.address_ru AS address,
+			p.like_count,
+			p.lng,
+			p.lat,
+			COALESCE(AVG(l.like_count), 0) AS average_likes_rating,
+			p.phone_number,
+			CASE
+				WHEN p.created_at >= NOW() - INTERVAL '10 days' THEN true
+				ELSE false
+			END AS is_new,
+			p.best_product,
+			p.promotion
+		FROM 
+			products p
+		LEFT JOIN users u ON p.owner_id = u.id
+		LEFT JOIN country co ON p.country_id = co.id
+		LEFT JOIN city ci ON p.city_id = ci.id
+		LEFT JOIN (
+			SELECT product_id, COUNT(*) AS like_count
+			FROM likes
+			GROUP BY product_id
+		) l ON p.id = l.product_id
+		WHERE p.slug = :slug
+		GROUP BY 
+			p.id, 
+			u.id, 
+			co.id,
+			ci.id
+		ORDER BY p.created_at;
+	`
 
-	var p models.Product
-	var owner models.OwnerProduct
-	var err error
-
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		pRows, queryErr := r.db.Query(`
-			SELECT 
-				p.id,
-				p.slug,
-				p.name_ru AS name,
-				p.price_per_night,
-				p.price_per_week,
-				p.price_per_month,
-				u.id AS user_id,
-				u.email AS email,
-				u.first_name,
-				u.last_name,
-				u.middle_name,
-				u.phone_number AS phone_number,
-				u.avatar,
-				p.rooms_qty,
-				p.guest_qty,
-				p.bed_qty,
-				p.bedroom_qty,
-				p.toilet_qty,
-				p.bath_qty,
-				p.description_ru AS description,
-				co.name_ru AS country,
-				ci.name_ru AS city,
-				p.district_ru AS district,
-				p.address_ru AS address,
-				p.like_count,
-				p.lng,
-				p.lat,
-				COALESCE(AVG(l.like_count), 0) AS average_likes_rating,
-				p.phone_number,
-				CASE
-					WHEN p.created_at >= NOW() - INTERVAL '10 days' THEN true
-					ELSE false
-				END AS is_new,
-				p.best_product,
-				p.promotion
-			FROM 
-				products p
-			LEFT JOIN users u ON p.owner_id = u.id
-			LEFT JOIN country co ON p.country_id = co.id
-			LEFT JOIN city ci ON p.city_id = ci.id
-			LEFT JOIN (
-				SELECT product_id, COUNT(*) AS like_count
-				FROM likes
-				GROUP BY product_id
-			) l ON p.id = l.product_id
-			WHERE p.slug = $1
-			GROUP BY 
-				p.id, 
-				u.id, 
-				co.id,
-				ci.id
-			ORDER BY p.created_at;
-		`, slug)
-
-		if queryErr != nil {
-			err = queryErr
-			return
-		}
-		defer pRows.Close()
-
-		for pRows.Next() {
-			if scanErr := pRows.Scan(
-				&p.ID, &p.Slug, &p.Name, &p.PricePerNight, &p.PricePerWeek, &p.PricePerMonth,
-				&owner.ID, &owner.Email, &owner.FirstName, &owner.LastName, &owner.MiddleName, &owner.PhoneNumber, &owner.Avatar,
-				&p.RoomsQty, &p.GuestQty, &p.BedQty, &p.BedroomQty, &p.ToiletQty, &p.BathQty, &p.Description,
-				&p.Country, &p.City, &p.District, &p.Address, &p.LikeCount, &p.Lng, &p.Lat, &p.AverageLikesRating,
-				&p.PhoneNumber, &p.IsNew, &p.BestProduct, &p.Promotion,
-			); scanErr != nil {
-				err = scanErr
-				return
-			}
-			mu.Lock()
-			p.Images, err = r.getImagesByProductID(int64(p.ID))
-			if err != nil {
-				mu.Unlock()
-				return
-			}
-			mu.Unlock()
-		}
-	}()
-
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		p.Type, err = r.getProductTypeBySlug(slug)
-	}()
-
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		p.ProductComments, err = r.getCommentsByProductSlug(slug)
-	}()
-
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		p.Conveniences, err = r.getConveniencesByProductSlug(slug)
-	}()
-
-	wg.Wait()
-
-	if err != nil {
-		return nil, err
+	params := map[string]interface{}{
+		"slug": slug,
 	}
 
-	p.Owner = owner
-	return &p, nil
+	var product models.Product
+	err := r.db.QueryRowx(query, params).StructScan(&product)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch product by slug: %w", err)
+	}
+
+	product.Images, _ = r.getImagesByProductID(product.Id)
+	product.ProductComments, _ = r.getCommentsByProductId(product.Id)
+	productType, _ := r.getProductTypeById(product.Id)
+	if productType != nil {
+		product.Type = *productType
+	}
+	product.Conveniences, _ = r.getConveniencesByProductId(product.Id)
+
+	return &product, nil
 }
 
 func (r *ProductRepository) getImagesByProductID(productID int64) ([]models.ProductImages, error) {
-	rows, err := r.db.Query(`
-		SELECT 
-			id,
-			thumbnail,
-			mimetype,
-			is_label,
-			width,
-			height
-		FROM 
-			images
-		WHERE 
-			product_id = $1;
-	`, productID)
+	imageBaseUrl := os.Getenv("IMAGE_BASE_URL")
+	if imageBaseUrl == "" {
+		return nil, fmt.Errorf("IMAGE_BASE_URL not set")
+	}
 
+	query := `
+		SELECT id, original, thumbnail, mimetype, is_label, width, height
+		FROM images
+		WHERE product_id = $1;
+	`
+
+	var images []models.ProductImages
+	err := r.db.Select(&images, query, productID)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
-
-	imageBaseURL := os.Getenv("IMAGE_BASE_URL")
-	if imageBaseURL == "" {
-		return nil, fmt.Errorf("IMAGE_BASE_URL is not set in environment")
-	}
-
-	var images []models.ProductImages
-
-	for rows.Next() {
-		var image models.ProductImages
-
-		if err := rows.Scan(&image.ID, &image.Thumbnail, &image.MimeType,
-			&image.IsLabel, &image.Width, &image.Height); err != nil {
-			return nil, err
-		}
-
-		if image.Thumbnail != "" {
-			image.Thumbnail = fmt.Sprintf("%s/%s", imageBaseURL, image.Thumbnail)
-		}
-
-		images = append(images, image)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, err
+	for i := range images {
+		images[i].Original = imageBaseUrl + "/" + images[i].Original
+		images[i].Thumbnail = imageBaseUrl + "/" + images[i].Thumbnail
 	}
 
 	return images, nil
 }
 
-func (r *ProductRepository) getCommentsByProductSlug(slug string) ([]models.ProductComment, error) {
-	var comments []models.ProductComment
-
-	cRows, queryErr := r.db.Query(`
+func (r *ProductRepository) getCommentsByProductId(product_id int64) ([]models.ProductComment, error) {
+	query := `
 		SELECT 
-			c.id AS comment_id,
-			c.content AS comment_content,
-			c.rating AS comment_rating,
-			cu.email AS comment_user_email,
-			cu.first_name AS comment_first_name,
-			cu.last_name AS comment_last_name,
-			cu.avatar AS comment_avatar
+			c.id, 
+			c.content,
+			c.rating, 
+			c.created_at,
+			u.email AS 'user.emai',
+			u.first_name AS 'user.first_name',
+			u.last_name AS 'user.last_name',
+			u.avatar AS 'user.avatar',
 		FROM 
-			comments c
-		LEFT JOIN users cu ON cu.id = c.user_id
-		WHERE c.product_id = (SELECT id FROM products WHERE slug = $1);
-	`, slug)
+			comments AS c
+		LEFT JOIN users AS u ON u.id = c.user_id
+		WHERE 
+			c.product_id = $1;
+	`
 
-	if queryErr != nil {
-		return nil, queryErr
-	}
-	defer cRows.Close()
-
-	for cRows.Next() {
-		var comment models.ProductComment
-		var commentUser models.ProductCommentUser
-		if scanErr := cRows.Scan(
-			&comment.ID, &comment.Content, &comment.Rating,
-			&commentUser.Email, &commentUser.FirstName, &commentUser.LastName, &commentUser.Avatar,
-		); scanErr != nil {
-			return nil, scanErr
-		}
-		comment.User = commentUser
-		comments = append(comments, comment)
+	var comments []models.ProductComment
+	err := r.db.Select(&comments, query, product_id)
+	if err != nil {
+		return nil, err
 	}
 
 	return comments, nil
 }
 
-func (r *ProductRepository) getProductTypeBySlug(slug string) (models.ProductType, error) {
+func (r *ProductRepository) getProductTypeById(product_id int64) (*models.ProductType, error) {
+	query := `
+		SELECT id, name
+		FROM types
+		WHERE product_id = $1;
+	`
+
 	var productType models.ProductType
-
-	tRows, queryErr := r.db.Query(`
-		SELECT 
-			t.name_ru AS name,
-			t.icon AS icon
-		FROM 
-			types t
-		LEFT JOIN products p ON t.id = p.type_id
-		WHERE p.slug = $1;
-	`, slug)
-
-	if queryErr != nil {
-		return productType, queryErr
-	}
-	defer tRows.Close()
-
-	if tRows.Next() {
-		if scanErr := tRows.Scan(&productType.Name, &productType.Icon); scanErr != nil {
-			return productType, scanErr
-		}
+	err := r.db.Get(&productType, query, product_id)
+	if err != nil {
+		return nil, err
 	}
 
-	return productType, nil
+	return &productType, nil
 }
 
-func (r *ProductRepository) getConveniencesByProductSlug(slug string) ([]models.Convenience, error) {
-	var conveniences []models.Convenience
-
-	pcRows, queryErr := r.db.Query(`
-		SELECT 
-			conv.id AS id,
-			conv.name_ru AS name,
-			conv.icon AS icon
-		FROM 
-			products_convenience pc
-		LEFT JOIN conveniences conv ON pc.convenience_id = conv.id
-		LEFT JOIN products p ON p.id = pc.product_id
-		WHERE p.slug = $1;
-	`, slug)
-
-	if queryErr != nil {
-		return nil, queryErr
+func (r *ProductRepository) getConveniencesByProductId(product_id int64) ([]models.Convenience, error) {
+	imageBaseUrl := os.Getenv("IMAGE_BASE_URL")
+	if imageBaseUrl == "" {
+		return nil, fmt.Errorf("IMAGE_BASE_URL not set")
 	}
-	defer pcRows.Close()
 
-	for pcRows.Next() {
-		var convenience models.Convenience
-		if scanErr := pcRows.Scan(&convenience.ID, &convenience.Name, &convenience.Icon); scanErr != nil {
-			return nil, scanErr
-		}
+	query := `
+		SELECT 
+			c.id, 
+			c.name, 
+			c.icon
+		FROM conveniences c
+		INNER JOIN product_conveniences pc ON c.id = pc.convenience_id
+		INNER JOIN products p ON pc.product_id = p.id
+		WHERE p.product_id = $1;
+	`
 
-		imageBaseURL := os.Getenv("IMAGE_BASE_URL")
-		if imageBaseURL == "" {
-			return nil, fmt.Errorf("IMAGE_BASE_URL is not set in environment")
-		}
+	var conveniences []models.Convenience
+	err := r.db.Select(&conveniences, query, product_id)
+	if err != nil {
+		return nil, err
+	}
 
-		if convenience.Icon != "" {
-			convenience.Icon = fmt.Sprintf("%s/%s", imageBaseURL, convenience.Icon)
-		}
-
-		conveniences = append(conveniences, convenience)
+	for i := range conveniences {
+		conveniences[i].Icon = imageBaseUrl + "/" + conveniences[i].Icon
 	}
 
 	return conveniences, nil

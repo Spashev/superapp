@@ -1,18 +1,18 @@
 package router
 
 import (
-	"database/sql"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
+	"github.com/jmoiron/sqlx"
 
 	"superapp/internal/handler"
 	md "superapp/internal/middleware"
 )
 
-func RegisterRoutes(db *sql.DB) http.Handler {
+func RegisterRoutes(db *sqlx.DB) http.Handler {
 	r := chi.NewRouter()
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"https://bookit.kz", "http://localhost:6969"},
