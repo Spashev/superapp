@@ -9,12 +9,3 @@ type ProductImages struct {
 	Width     int    `json:"width"`
 	Height    int    `json:"height"`
 }
-
-type ProductImagePaginate struct {
-	ID        int    `json:"id"`
-	Thumbnail string `json:"thumbnail"`
-	MimeType  string `json:"mimetype"`
-	IsLabel   bool   `json:"is_label"`
-	Width     int    `json:"width"`
-	Height    int    `json:"height"`
-}

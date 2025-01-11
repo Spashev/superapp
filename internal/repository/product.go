@@ -17,7 +17,7 @@ func NewProductRepository(db *sql.DB) *ProductRepository {
 	return &ProductRepository{db: db}
 }
 
-func (r *ProductRepository) GetAllProducts(page, limit int) (*models.ProductPaginate, error) {
+func (r *ProductRepository) GetAllProducts(page, limit int) (*models.ProductsPaginate, error) {
 	offset := (page - 1) * limit
 
 	rows, err := r.db.Query(`
@@ -72,7 +72,7 @@ func (r *ProductRepository) GetAllProducts(page, limit int) (*models.ProductPagi
 	}
 	defer rows.Close()
 
-	var productPaginate models.ProductPaginate
+	var ProductsPaginate models.ProductsPaginate
 	var products []models.Products
 	var wg sync.WaitGroup
 	productCh := make(chan models.Products, limit)
@@ -132,12 +132,12 @@ func (r *ProductRepository) GetAllProducts(page, limit int) (*models.ProductPagi
 		previous = fmt.Sprintf("%s?limit=%d&offset=%d", baseURL, limit, prevOffset)
 	}
 
-	productPaginate.Count = totalCount
-	productPaginate.Results = products
-	productPaginate.Next = next
-	productPaginate.Previous = previous
+	ProductsPaginate.Count = totalCount
+	ProductsPaginate.Results = products
+	ProductsPaginate.Next = next
+	ProductsPaginate.Previous = previous
 
-	return &productPaginate, nil
+	return &ProductsPaginate, nil
 }
 
 func (r *ProductRepository) GetProductBySlug(slug string) (*models.Product, error) {
@@ -178,6 +178,8 @@ func (r *ProductRepository) GetProductBySlug(slug string) (*models.Product, erro
 				p.district_ru AS district,
 				p.address_ru AS address,
 				p.like_count,
+				p.lng,
+				p.lat,
 				COALESCE(AVG(l.like_count), 0) AS average_likes_rating,
 				p.phone_number,
 				CASE
@@ -216,7 +218,7 @@ func (r *ProductRepository) GetProductBySlug(slug string) (*models.Product, erro
 				&p.ID, &p.Slug, &p.Name, &p.PricePerNight, &p.PricePerWeek, &p.PricePerMonth,
 				&owner.ID, &owner.Email, &owner.FirstName, &owner.LastName, &owner.MiddleName, &owner.PhoneNumber, &owner.Avatar,
 				&p.RoomsQty, &p.GuestQty, &p.BedQty, &p.BedroomQty, &p.ToiletQty, &p.BathQty, &p.Description,
-				&p.Country, &p.City, &p.District, &p.Address, &p.LikeCount, &p.AverageLikesRating,
+				&p.Country, &p.City, &p.District, &p.Address, &p.LikeCount, &p.Lng, &p.Lat, &p.AverageLikesRating,
 				&p.PhoneNumber, &p.IsNew, &p.BestProduct, &p.Promotion,
 			); scanErr != nil {
 				err = scanErr
@@ -241,7 +243,7 @@ func (r *ProductRepository) GetProductBySlug(slug string) (*models.Product, erro
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		p.Comments, err = r.getCommentsByProductSlug(slug)
+		p.ProductComments, err = r.getCommentsByProductSlug(slug)
 	}()
 
 	wg.Add(1)
@@ -260,7 +262,7 @@ func (r *ProductRepository) GetProductBySlug(slug string) (*models.Product, erro
 	return &p, nil
 }
 
-func (r *ProductRepository) getImagesByProductID(productID int64) ([]models.ProductImagePaginate, error) {
+func (r *ProductRepository) getImagesByProductID(productID int64) ([]models.ProductImages, error) {
 	rows, err := r.db.Query(`
 		SELECT 
 			id,
@@ -285,10 +287,10 @@ func (r *ProductRepository) getImagesByProductID(productID int64) ([]models.Prod
 		return nil, fmt.Errorf("IMAGE_BASE_URL is not set in environment")
 	}
 
-	var images []models.ProductImagePaginate
+	var images []models.ProductImages
 
 	for rows.Next() {
-		var image models.ProductImagePaginate
+		var image models.ProductImages
 
 		if err := rows.Scan(&image.ID, &image.Thumbnail, &image.MimeType,
 			&image.IsLabel, &image.Width, &image.Height); err != nil {
@@ -400,6 +402,16 @@ func (r *ProductRepository) getConveniencesByProductSlug(slug string) ([]models.
 		if scanErr := pcRows.Scan(&convenience.ID, &convenience.Name, &convenience.Icon); scanErr != nil {
 			return nil, scanErr
 		}
+
+		imageBaseURL := os.Getenv("IMAGE_BASE_URL")
+		if imageBaseURL == "" {
+			return nil, fmt.Errorf("IMAGE_BASE_URL is not set in environment")
+		}
+
+		if convenience.Icon != "" {
+			convenience.Icon = fmt.Sprintf("%s/%s", imageBaseURL, convenience.Icon)
+		}
+
 		conveniences = append(conveniences, convenience)
 	}
 
