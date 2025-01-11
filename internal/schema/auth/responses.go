@@ -1,4 +1,4 @@
-package handler
+package schema
 
 type AuthLoginRes struct {
 	AccessToken  string `json:"access_token"`

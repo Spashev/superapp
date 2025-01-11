@@ -1,4 +1,4 @@
-package handler
+package schema
 
 type ProductReq struct {
 	PricePerNight    int     `json:"price_per_night"`

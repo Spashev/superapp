@@ -1,4 +1,4 @@
-package handler
+package schema
 
 type AuthLoginReq struct {
 	Email    string `json:"email" validate:"required,email"`

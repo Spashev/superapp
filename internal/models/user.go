@@ -1,6 +1,7 @@
 package models
 
 type User struct {
+	Id            int64  `json:"id"`
 	Email         string `json:"email"`
 	First_name    string `json:"first_name"`
 	Last_name     string `json:"last_name"`
@@ -10,7 +11,8 @@ type User struct {
 	Avatar        string `json:"avatar"`
 	IIN           string `json:"iin"`
 	Role          string `json:"role"`
-	Is_active     string `json:"is_active"`
+	Is_active     bool   `json:"is_active"`
+	Password      string `json:"password"`
 }
 
 type OwnerProduct struct {

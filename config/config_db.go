@@ -5,11 +5,13 @@ import (
 )
 
 type Config struct {
-	DatabaseDSN string
+	DatabaseDSN  string
+	JWTSecretKey string
 }
 
 func NewConfig() *Config {
 	return &Config{
-		DatabaseDSN: os.Getenv("DATABASE_DSN"),
+		DatabaseDSN:  os.Getenv("DATABASE_DSN"),
+		JWTSecretKey: os.Getenv("JWT_SECRET_KEY"),
 	}
 }

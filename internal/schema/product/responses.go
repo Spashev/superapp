@@ -1,4 +1,4 @@
-package handler
+package schema
 
 type ProductRes struct {
 	ID               int64   `json:"id"`

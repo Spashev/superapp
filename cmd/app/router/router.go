@@ -8,13 +8,16 @@ import (
 
 	"superapp/internal/handler"
 	md "superapp/internal/middleware"
+	"superapp/internal/util/token"
 )
 
-func RegisterRoutes(db *sqlx.DB) http.Handler {
+func RegisterRoutes(db *sqlx.DB, tokenMaker *token.JWTMaker) http.Handler {
 	r := chi.NewRouter()
 
 	r.Use(md.CorsHandler())
 	r.Use(md.GeneralMiddleware())
+
+	r.Post("/api/v1/login", handler.Login(db, tokenMaker))
 
 	r.Route("/api/v1", func(r chi.Router) {
 		r.With(md.Paginate).Get("/products/get", handler.GetProductList(db))

@@ -20,23 +20,8 @@ func GetAuthMiddlewareFunc(tokenMaker *token.JWTMaker) func(http.Handler) http.H
 				return
 			}
 
-			ctx := context.WithValue(r.Context(), authKey{}, claims)
-			next.ServeHTTP(w, r.WithContext(ctx))
-		})
-	}
-}
-
-func GetAdminMiddlewareFunc(tokenMaker *token.JWTMaker) func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			claims, err := verifyClaimsFromAuthHeader(r, tokenMaker)
-			if err != nil {
-				http.Error(w, fmt.Sprintf("error verifying token: %v", err), http.StatusUnauthorized)
-				return
-			}
-
-			if !claims.IsAdmin {
-				http.Error(w, "user is not an admin", http.StatusForbidden)
+			if claims.IsActive {
+				http.Error(w, "User is not active", http.StatusForbidden)
 				return
 			}
 

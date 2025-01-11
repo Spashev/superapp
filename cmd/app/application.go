@@ -10,6 +10,7 @@ import (
 	"superapp/cmd/app/router"
 	"superapp/config"
 	"superapp/internal/db"
+	"superapp/internal/util/token"
 )
 
 type App struct {
@@ -18,6 +19,7 @@ type App struct {
 
 func (a *App) Run() {
 	cfg := config.NewConfig()
+	jwtMaker := token.NewJWTMaker(cfg.JWTSecretKey)
 
 	database, err := db.NewDatabase(cfg.DatabaseDSN)
 	if err != nil {
@@ -27,7 +29,7 @@ func (a *App) Run() {
 
 	fmt.Printf("Server running on %s...\n", ":8080")
 
-	r := router.RegisterRoutes(database.Conn)
+	r := router.RegisterRoutes(database.Conn, jwtMaker)
 	a.http = &http.Server{
 		Addr:           ":8080",
 		MaxHeaderBytes: 1 << 20,
