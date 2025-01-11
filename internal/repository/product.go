@@ -114,14 +114,6 @@ func (r *ProductRepository) GetAllProducts(page, limit int) (*models.ProductPagi
 		return nil, err
 	}
 
-	for i := 0; i < len(products); i++ {
-		for j := 0; j < len(products)-i-1; j++ {
-			if products[j].ID > products[j+1].ID {
-				products[j], products[j+1] = products[j+1], products[j]
-			}
-		}
-	}
-
 	baseURL := os.Getenv("BASE_URL")
 	next := ""
 	if int64(offset+limit) < totalCount {
@@ -300,7 +292,7 @@ func (r *ProductRepository) getImagesByProductID(productID int64) ([]models.Prod
 		}
 
 		if image.Thumbnail != "" {
-			image.Thumbnail = imageBaseURL + image.Thumbnail
+			image.Thumbnail = fmt.Sprintf("%s/%s", imageBaseURL, image.Thumbnail)
 		}
 
 		images = append(images, image)

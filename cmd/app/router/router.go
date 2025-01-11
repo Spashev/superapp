@@ -18,8 +18,8 @@ func RegisterRoutes(db *sql.DB) http.Handler {
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.StripSlashes)
 
-	r.With(md.Paginate).Get("/products", handler.GetProductList(db))
-	r.Get("/products/{slug}", handler.GetProductBySlug(db))
+	r.With(md.Paginate).Get("/api/v1/products/get", handler.GetProductList(db))
+	r.Get("/api/v1/products/{slug}", handler.GetProductBySlug(db))
 
 	return r
 }
