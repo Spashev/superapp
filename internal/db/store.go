@@ -21,7 +21,7 @@ func NewDatabase(dsn string) (*Database, error) {
 
 	db.SetMaxOpenConns(1000)
 	db.SetMaxIdleConns(1000)
-	db.SetConnMaxLifetime(30 * time.Minute)
+	db.SetConnMaxLifetime(60 * time.Minute)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

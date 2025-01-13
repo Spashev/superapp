@@ -1,18 +1,11 @@
 package middleware
 
-import (
-	"net/http"
+import "github.com/gofiber/fiber/v2"
 
-	"github.com/go-chi/cors"
-)
+func CorsHandler(c *fiber.Ctx) error {
+	c.Set("Access-Control-Allow-Origin", "*")
+	c.Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+	c.Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 
-func CorsHandler() func(http.Handler) http.Handler {
-	return cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"https://bookit.kz", "http://localhost:6969"},
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
-		ExposedHeaders:   []string{"Link"},
-		AllowCredentials: true,
-		MaxAge:           300,
-	})
+	return c.Next()
 }

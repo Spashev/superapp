@@ -1,11 +1,10 @@
 package app
 
 import (
-	"context"
 	"fmt"
 	"log"
-	"net/http"
-	"time"
+
+	"github.com/gofiber/fiber/v2"
 
 	"superapp/cmd/app/router"
 	"superapp/config"
@@ -14,7 +13,7 @@ import (
 )
 
 type App struct {
-	http *http.Server
+	fiberApp *fiber.App
 }
 
 func (a *App) Run() {
@@ -29,19 +28,13 @@ func (a *App) Run() {
 
 	fmt.Printf("Server running on %s...\n", ":8080")
 
-	r := router.RegisterRoutes(database.Conn, jwtMaker)
-	a.http = &http.Server{
-		Addr:           ":8080",
-		MaxHeaderBytes: 1 << 20,
-		ReadTimeout:    10 * time.Second,
-		WriteTimeout:   10 * time.Second,
-		Handler:        r,
-	}
-	if err := a.http.ListenAndServe(); err != nil {
+	a.fiberApp = router.RegisterRoutes(database.Conn, jwtMaker)
+
+	if err := a.fiberApp.Listen(":8080"); err != nil {
 		log.Fatal("Error starting the server: ", err)
 	}
 }
 
-func (a *App) Shotdown(ctx context.Context) error {
-	return a.http.Shutdown(ctx)
+func (a *App) Shutdown() error {
+	return a.fiberApp.Shutdown()
 }

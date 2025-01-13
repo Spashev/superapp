@@ -1,30 +1,27 @@
 package middleware
 
 import (
-	"context"
-	"net/http"
 	"strconv"
+
+	"github.com/gofiber/fiber/v2"
 )
 
-func Paginate(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		pageStr := r.URL.Query().Get("page")
-		limitStr := r.URL.Query().Get("limit")
+func Paginate(c *fiber.Ctx) error {
+	pageStr := c.Query("page")
+	limitStr := c.Query("limit")
 
-		page, err := strconv.Atoi(pageStr)
-		if err != nil || page < 1 {
-			page = 1
-		}
+	page, err := strconv.Atoi(pageStr)
+	if err != nil || page < 1 {
+		page = 1
+	}
 
-		limit, err := strconv.Atoi(limitStr)
-		if err != nil || limit < 1 {
-			limit = 20
-		}
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil || limit < 1 {
+		limit = 20
+	}
 
-		ctx := r.Context()
-		ctx = context.WithValue(ctx, "page", page)
-		ctx = context.WithValue(ctx, "limit", limit)
+	c.Locals("page", page)
+	c.Locals("limit", limit)
 
-		next.ServeHTTP(w, r.WithContext(ctx))
-	})
+	return c.Next()
 }

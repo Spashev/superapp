@@ -1,29 +1,29 @@
 package router
 
 import (
-	"net/http"
-
-	"github.com/go-chi/chi/v5"
+	"github.com/gofiber/fiber/v2"
 	"github.com/jmoiron/sqlx"
 
 	"superapp/internal/handler"
-	md "superapp/internal/middleware"
+	"superapp/internal/middleware"
 	"superapp/internal/util/token"
 )
 
-func RegisterRoutes(db *sqlx.DB, tokenMaker *token.JWTMaker) http.Handler {
-	r := chi.NewRouter()
+func RegisterRoutes(db *sqlx.DB, tokenMaker *token.JWTMaker) *fiber.App {
+	app := fiber.New()
 
-	r.Use(md.CorsHandler())
-	r.Use(md.GeneralMiddleware())
+	app.Use(middleware.CorsHandler)
 
-	r.Post("/api/v1/login", handler.Login(db, tokenMaker))
+	apiV1 := app.Group("/api/v1")
+	{
+		apiV1.Post("/register", middleware.Paginate, handler.Register(db, tokenMaker))
+		apiV1.Post("/login", handler.Login(db, tokenMaker))
+		apiV1.Get("/users/me", handler.UserMe(db, tokenMaker))
 
-	r.Route("/api/v1", func(r chi.Router) {
-		r.With(md.Paginate).Get("/products/get", handler.GetProductList(db))
-		r.Get("/products/{slug}", handler.GetProductBySlug(db))
-		r.Get("/categories", handler.GetCategories(db))
-	})
+		apiV1.Get("/products/get", handler.GetProductList(db))
+		apiV1.Get("/products/:slug", handler.GetProductBySlug(db))
+		apiV1.Get("/categories", handler.GetCategories(db))
+	}
 
-	return r
+	return app
 }

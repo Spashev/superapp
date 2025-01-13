@@ -15,19 +15,19 @@ func NewJWTMaker(secretKey string) *JWTMaker {
 	return &JWTMaker{secretKey}
 }
 
-func (maker *JWTMaker) CreateToken(id int64, email string, firstName string, isActive bool, duration time.Duration) (string, *UserClaims, error) {
-	claims, err := NewUserClaims(id, email, firstName, isActive, duration)
+func (maker *JWTMaker) CreateToken(id int64, duration time.Duration) (string, error) {
+	claims, err := NewUserClaims(id, duration)
 	if err != nil {
-		return "", nil, err
+		return "", err
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenStr, err := token.SignedString([]byte(maker.secretKey))
 	if err != nil {
-		return "", nil, fmt.Errorf("error signing token: %w", err)
+		return "", fmt.Errorf("error signing token: %w", err)
 	}
 
-	return tokenStr, claims, nil
+	return tokenStr, nil
 }
 
 func (maker *JWTMaker) VerifyToken(tokenStr string) (*UserClaims, error) {
