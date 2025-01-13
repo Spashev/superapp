@@ -13,6 +13,7 @@ func RegisterRoutes(db *sqlx.DB, tokenMaker *token.JWTMaker) *fiber.App {
 	app := fiber.New()
 
 	app.Use(middleware.CorsHandler)
+	app.Use(middleware.Logger)
 
 	apiV1 := app.Group("/api/v1")
 	{
