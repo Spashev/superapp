@@ -13,7 +13,7 @@ import (
 func GetProductList(db *sqlx.DB) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		page := c.QueryInt("page", 1)
-		limit := c.QueryInt("limit", 10)
+		limit := c.QueryInt("limit", 20)
 
 		repo := repository.NewProductRepository(db)
 		productService := service.NewProductService(repo)

@@ -20,6 +20,8 @@ func Logger(c *fiber.Ctx) error {
 	var colorStatus string
 	if status >= 400 {
 		colorStatus = "\033[31m"
+	} else if status >= 300 {
+		colorStatus = "\033[33m"
 	} else {
 		colorStatus = "\033[32m"
 	}

@@ -17,7 +17,7 @@ func Paginate(c *fiber.Ctx) error {
 
 	limit, err := strconv.Atoi(limitStr)
 	if err != nil || limit < 1 {
-		limit = 20
+		limit = 25
 	}
 
 	c.Locals("page", page)
