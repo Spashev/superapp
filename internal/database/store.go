@@ -13,7 +13,13 @@ type Database struct {
 	Conn *sqlx.DB
 }
 
+var dbInstance *Database
+
 func NewDatabase(dsn string) (*Database, error) {
+	if dbInstance != nil {
+		return dbInstance, nil
+	}
+
 	db, err := sqlx.Open("pgx", dsn)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database: %v", err)
@@ -30,7 +36,10 @@ func NewDatabase(dsn string) (*Database, error) {
 		return nil, fmt.Errorf("failed to connect to the database: %v", err)
 	}
 
-	return &Database{Conn: db}, nil
+	dbInstance = &Database{
+		Conn: db,
+	}
+	return dbInstance, nil
 }
 
 func (db *Database) Close() {
