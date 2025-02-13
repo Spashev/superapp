@@ -37,6 +37,7 @@ func (a *App) Run() {
 	go func() {
 		port, _ := strconv.Atoi(os.Getenv("PORT"))
 		log.Printf("Server running on %d...\n", port)
+
 		err := a.fiberApp.Listen(fmt.Sprintf(":%d", port))
 		if err != nil {
 			panic(fmt.Sprintf("http server error: %s", err))
