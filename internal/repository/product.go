@@ -17,7 +17,7 @@ func NewProductRepository(db *sqlx.DB) *ProductRepository {
 	return &ProductRepository{db: db}
 }
 
-func (r *ProductRepository) GetAllProducts(page, limit int) (*models.ProductsPaginate, error) {
+func (repository *ProductRepository) GetAllProducts(page, limit int) (*models.ProductsPaginate, error) {
 	offset := (page - 1) * limit
 
 	query := `
@@ -70,7 +70,7 @@ func (r *ProductRepository) GetAllProducts(page, limit int) (*models.ProductsPag
 		"offset": offset,
 	}
 
-	rows, err := r.db.NamedQuery(query, params)
+	rows, err := repository.db.NamedQuery(query, params)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute query: %w", err)
 	}
@@ -86,7 +86,7 @@ func (r *ProductRepository) GetAllProducts(page, limit int) (*models.ProductsPag
 			return nil, fmt.Errorf("failed to scan product and owner: %w", err)
 		}
 
-		images, err := r.getImagesByProductID(product.Id)
+		images, err := repository.getImagesByProductID(product.Id)
 		if err != nil {
 			return nil, fmt.Errorf("failed to fetch images for product %d: %w", product.Id, err)
 		}
@@ -120,7 +120,7 @@ func (r *ProductRepository) GetAllProducts(page, limit int) (*models.ProductsPag
 	}, nil
 }
 
-func (r *ProductRepository) GetProductBySlug(slug string) (*models.Product, error) {
+func (repository *ProductRepository) GetProductBySlug(slug string) (*models.Product, error) {
 	query := `
 		SELECT 
 			p.id,
@@ -179,23 +179,23 @@ func (r *ProductRepository) GetProductBySlug(slug string) (*models.Product, erro
 	`
 
 	var product models.Product
-	err := r.db.QueryRowx(query, slug).StructScan(&product)
+	err := repository.db.QueryRowx(query, slug).StructScan(&product)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch product by slug: %w", err)
 	}
 
-	product.Images, _ = r.getImagesByProductID(product.Id)
-	product.Comments, _ = r.getCommentsByProductId(product.Id)
-	productType, _ := r.getProductTypeById(product.Type_id)
+	product.Images, _ = repository.getImagesByProductID(product.Id)
+	product.Comments, _ = repository.getCommentsByProductId(product.Id)
+	productType, _ := repository.getProductTypeById(product.Type_id)
 	if productType != nil {
 		product.Type = *productType
 	}
-	product.Conveniences, _ = r.getConveniencesByProductId(product.Id)
+	product.Conveniences, _ = repository.getConveniencesByProductId(product.Id)
 
 	return &product, nil
 }
 
-func (r *ProductRepository) getImagesByProductID(productID int64) ([]models.ProductImages, error) {
+func (repository *ProductRepository) getImagesByProductID(productID int64) ([]models.ProductImages, error) {
 	imageBaseUrl := os.Getenv("IMAGE_BASE_URL")
 	if imageBaseUrl == "" {
 		return nil, fmt.Errorf("IMAGE_BASE_URL not set")
@@ -208,7 +208,7 @@ func (r *ProductRepository) getImagesByProductID(productID int64) ([]models.Prod
 	`
 
 	var images []models.ProductImages
-	err := r.db.Select(&images, query, productID)
+	err := repository.db.Select(&images, query, productID)
 	if err != nil {
 		return nil, err
 	}
@@ -220,7 +220,7 @@ func (r *ProductRepository) getImagesByProductID(productID int64) ([]models.Prod
 	return images, nil
 }
 
-func (r *ProductRepository) getCommentsByProductId(product_id int64) ([]models.ProductComment, error) {
+func (repository *ProductRepository) getCommentsByProductId(product_id int64) ([]models.ProductComment, error) {
 	query := `
 		SELECT 
 			c.id, 
@@ -240,7 +240,7 @@ func (r *ProductRepository) getCommentsByProductId(product_id int64) ([]models.P
 	`
 
 	var comments []models.ProductComment
-	err := r.db.Select(&comments, query, product_id)
+	err := repository.db.Select(&comments, query, product_id)
 	if err != nil {
 		return nil, err
 	}
@@ -248,7 +248,7 @@ func (r *ProductRepository) getCommentsByProductId(product_id int64) ([]models.P
 	return comments, nil
 }
 
-func (r *ProductRepository) getProductTypeById(product_id int64) (*models.ProductType, error) {
+func (repository *ProductRepository) getProductTypeById(product_id int64) (*models.ProductType, error) {
 	query := `
 		SELECT 
 			id,
@@ -258,7 +258,7 @@ func (r *ProductRepository) getProductTypeById(product_id int64) (*models.Produc
 		WHERE id = $1;
 	`
 	var productType models.ProductType
-	err := r.db.Get(&productType, query, product_id)
+	err := repository.db.Get(&productType, query, product_id)
 	if err != nil {
 		return nil, err
 	}
@@ -266,7 +266,7 @@ func (r *ProductRepository) getProductTypeById(product_id int64) (*models.Produc
 	return &productType, nil
 }
 
-func (r *ProductRepository) getConveniencesByProductId(product_id int64) ([]models.Convenience, error) {
+func (repository *ProductRepository) getConveniencesByProductId(product_id int64) ([]models.Convenience, error) {
 	imageBaseUrl := os.Getenv("IMAGE_BASE_URL")
 	if imageBaseUrl == "" {
 		return nil, fmt.Errorf("IMAGE_BASE_URL not set")
@@ -284,7 +284,7 @@ func (r *ProductRepository) getConveniencesByProductId(product_id int64) ([]mode
 	`
 
 	var conveniences []models.Convenience
-	err := r.db.Select(&conveniences, query, product_id)
+	err := repository.db.Select(&conveniences, query, product_id)
 	if err != nil {
 		return nil, err
 	}

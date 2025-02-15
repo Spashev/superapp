@@ -1,18 +1,12 @@
 package main
 
 import (
-	"log"
-
-	"github.com/joho/godotenv"
-
 	"superapp/cmd/app"
+	initializers "superapp/initializers"
 )
 
 func init() {
-	if err := godotenv.Load(); err != nil {
-		log.Println("No .env file found, using environment variables")
-	}
-
+	initializers.LoadEnvVariables()
 }
 
 func main() {

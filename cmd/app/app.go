@@ -12,9 +12,9 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"superapp/cmd/app/router"
+	"superapp/cmd/router"
 	"superapp/config"
-	db "superapp/internal/database"
+	"superapp/database"
 	"superapp/internal/util/token"
 )
 
@@ -26,7 +26,7 @@ func (a *App) Run() {
 	cfg := config.NewConfig()
 	jwtMaker := token.NewJWTMaker(cfg.JWTSecretKey)
 
-	database, err := db.NewDatabase(cfg.DatabaseDSN)
+	database, err := database.NewDatabase(cfg.DatabaseDSN)
 	if err != nil {
 		log.Fatalf("Failed to initialize the database: %v", err)
 	}

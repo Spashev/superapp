@@ -1,4 +1,4 @@
-package db
+package database
 
 import (
 	"context"
@@ -39,6 +39,7 @@ func NewDatabase(dsn string) (*Database, error) {
 	dbInstance = &Database{
 		Conn: db,
 	}
+
 	return dbInstance, nil
 }
 
