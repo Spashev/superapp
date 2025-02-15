@@ -1,7 +1,7 @@
 package schema
 
 type ProductRes struct {
-	ID               int64   `json:"id"`
+	ID               int     `json:"id"`
 	PricePerNight    int     `json:"price_per_night"`
 	PricePerWeek     *int    `json:"price_per_week"`
 	PricePerMonth    *int    `json:"price_per_month"`
@@ -11,20 +11,20 @@ type ProductRes struct {
 	BedroomQty       int     `json:"bedroom_qty"`
 	ToiletQty        *int    `json:"toilet_qty"`
 	BathQty          *int    `json:"bath_qty"`
-	CityID           *int64  `json:"city_id"`
+	CityID           *int    `json:"city_id"`
 	Lng              *string `json:"lng"`
 	Lat              *string `json:"lat"`
 	IsActive         bool    `json:"is_active"`
 	Priority         string  `json:"priority"`
 	LikeCount        int     `json:"like_count"`
 	CommentsRu       *string `json:"comments_ru"`
-	OwnerID          int64   `json:"owner_id"`
-	TypeID           int64   `json:"type_id"`
+	OwnerID          int     `json:"owner_id"`
+	TypeID           int     `json:"type_id"`
 	GuestsWithBabies bool    `json:"guests_with_babies"`
 	GuestsWithPets   bool    `json:"guests_with_pets"`
 	BestProduct      bool    `json:"best_product"`
 	Promotion        bool    `json:"promotion"`
-	CountryID        *int64  `json:"country_id"`
+	CountryID        *int    `json:"country_id"`
 	PhoneNumber      *string `json:"phone_number"`
 	AddressEn        *string `json:"address_en"`
 	AddressKz        *string `json:"address_kz"`
