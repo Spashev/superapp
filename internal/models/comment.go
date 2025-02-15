@@ -1,7 +1,7 @@
 package models
 
 type ProductCommentUser struct {
-	Id         int64  `json:"id"`
+	Id         int    `json:"id"`
 	Email      string `json:"email"`
 	First_name string `json:"first_name"`
 	Last_name  string `json:"last_name"`

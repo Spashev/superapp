@@ -1,7 +1,7 @@
 package models
 
 type User struct {
-	Id            int64  `json:"id"`
+	Id            int    `json:"id"`
 	Email         string `json:"email"`
 	First_name    string `json:"first_name"`
 	Last_name     string `json:"last_name"`
@@ -15,7 +15,7 @@ type User struct {
 }
 
 type CreateUser struct {
-	Id            int64  `json:"id"`
+	Id            int    `json:"id"`
 	Email         string `json:"email"`
 	First_name    string `json:"first_name"`
 	Last_name     string `json:"last_name"`
@@ -31,7 +31,7 @@ type CreateUser struct {
 }
 
 type OwnerProduct struct {
-	Id           int64  `json:"id"`
+	Id           int    `json:"id"`
 	Email        string `json:"email"`
 	First_name   string `json:"first_name"`
 	Last_name    string `json:"last_name"`

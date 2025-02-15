@@ -24,7 +24,7 @@ func RegisterRoutes(db *sqlx.DB, tokenMaker *token.JWTMaker) *fiber.App {
 		apiV1.Post("/login", handler.Login(db, tokenMaker))
 		apiV1.Get("/users/me", handler.UserMe(db, tokenMaker))
 
-		apiV1.Get("/products/get", middleware.Paginate, handler.GetProductList(db))
+		apiV1.Get("/products", middleware.Paginate, handler.GetProductList(db))
 		apiV1.Get("/products/:slug", handler.GetProductBySlug(db))
 		apiV1.Get("/categories", handler.GetCategories(db))
 	}

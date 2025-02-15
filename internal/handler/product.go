@@ -12,13 +12,13 @@ import (
 
 func GetProductList(db *sqlx.DB) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		page := c.QueryInt("page", 1)
 		limit := c.QueryInt("limit", 20)
+		offset := c.QueryInt("offset", 0)
 
 		repo := repository.NewProductRepository(db)
 		productService := service.NewProductService(repo)
 
-		products, err := productService.GetAllProducts(page, limit)
+		products, err := productService.GetAllProducts(limit, offset)
 		if err != nil {
 			log.Println(err)
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{

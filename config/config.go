@@ -11,6 +11,7 @@ type Config struct {
 
 func NewConfig() *Config {
 	return &Config{
+		DatabaseDSN:  os.Getenv("DATABASE_DSN"),
 		JWTSecretKey: os.Getenv("JWT_SECRET_KEY"),
 	}
 }

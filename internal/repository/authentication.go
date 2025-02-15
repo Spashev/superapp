@@ -43,7 +43,7 @@ func (repo *AuthenticationRepository) GetUserByEmail(email string) (*models.Crea
 	return &user, nil
 }
 
-func (repo *AuthenticationRepository) GetUserByID(id int64) (*models.User, error) {
+func (repo *AuthenticationRepository) GetUserByID(id int) (*models.User, error) {
 	var user models.User
 	query := `
 		SELECT 

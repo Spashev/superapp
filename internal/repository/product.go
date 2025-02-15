@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 
@@ -17,37 +18,48 @@ func NewProductRepository(db *sqlx.DB) *ProductRepository {
 	return &ProductRepository{db: db}
 }
 
-func (repository *ProductRepository) GetAllProducts(page, limit int) (*models.ProductsPaginate, error) {
-	offset := (page - 1) * limit
-
+func (repository *ProductRepository) GetAllProducts(limit, offset int) (*models.ProductsPaginate, error) {
 	query := `
 		SELECT 
-			p.id,
+			COUNT(*) OVER () AS total_count,
+			p.id AS product_id,
 			p.slug,
-			u.id AS "owner.id",
-			u.email AS "owner.email",
-			u.first_name AS "owner.first_name",
-			u.last_name AS "owner.last_name",
-			u.middle_name AS "owner.middle_name",
-			u.phone_number AS "owner.phone_number",
-			u.avatar AS "owner.avatar",
+			u.id AS owner_id,
+			u.email AS owner_email,
+			u.first_name AS owner_first_name,
+			u.last_name AS owner_last_name,
+			COALESCE(u.middle_name, '') AS owner_middle_name,
+			COALESCE(u.phone_number, '') AS owner_phone_number,
+			COALESCE(u.avatar, '') AS owner_avatar,
 			p.name_ru AS name,
 			p.price_per_night,
 			co.name_ru AS country,
 			ci.name_ru AS city,
 			p.district_ru AS district,
 			p.address_ru AS address,
-			CASE
-				WHEN p.created_at >= NOW() - INTERVAL '10 days' THEN true
-				ELSE false
+			CASE 
+				WHEN p.created_at >= NOW() - INTERVAL '10 days' THEN true 
+				ELSE false 
 			END AS is_new,
-			COALESCE(AVG(l.like_count), 0) AS rating,
+			COALESCE(l.like_count, 0) AS rating,
 			p.best_product,
 			p.promotion,
 			p.is_active,
-			COUNT(*) OVER() AS total_count
-		FROM 
-			products p
+			COALESCE(json_agg(
+				CASE 
+					WHEN pi.id IS NOT NULL THEN jsonb_build_object(
+						'id', pi.id,
+						'thumbnail', pi.thumbnail,
+						'original', pi.original,
+						'mimetype', pi.mimetype,
+						'is_label', pi.is_label,
+						'width', pi.width,
+						'height', pi.height
+					) 
+					ELSE NULL 
+				END
+			) FILTER (WHERE pi.id IS NOT NULL), '[]') AS images
+		FROM products p
 		LEFT JOIN users u ON p.owner_id = u.id
 		LEFT JOIN country co ON p.country_id = co.id
 		LEFT JOIN city ci ON p.city_id = ci.id
@@ -56,11 +68,8 @@ func (repository *ProductRepository) GetAllProducts(page, limit int) (*models.Pr
 			FROM likes
 			GROUP BY product_id
 		) l ON p.id = l.product_id
-		GROUP BY 
-			p.id, 
-			u.id, 
-			co.id,
-			ci.id
+		LEFT JOIN images pi ON p.id = pi.product_id
+		GROUP BY p.id, u.id, co.id, ci.id, l.like_count
 		ORDER BY p.id ASC
 		LIMIT :limit OFFSET :offset;
 	`
@@ -77,46 +86,65 @@ func (repository *ProductRepository) GetAllProducts(page, limit int) (*models.Pr
 	defer rows.Close()
 
 	var products []models.Products
-	var totalCount int64
+	var totalCount int
+
 	for rows.Next() {
-		var product models.Products
-
-		err = rows.StructScan(&product)
-		if err != nil {
-			return nil, fmt.Errorf("failed to scan product and owner: %w", err)
+		var temp struct {
+			models.Products
+			Images      string
+			Total_count int
 		}
 
-		images, err := repository.getImagesByProductID(product.Id)
-		if err != nil {
-			return nil, fmt.Errorf("failed to fetch images for product %d: %w", product.Id, err)
+		if err := rows.Scan(
+			&temp.Total_count,
+			&temp.Id, &temp.Slug,
+			&temp.Owner.Id, &temp.Owner.Email, &temp.Owner.First_name,
+			&temp.Owner.Last_name, &temp.Owner.Middle_name, &temp.Owner.Phone_number,
+			&temp.Owner.Avatar, &temp.Name, &temp.Price_per_night,
+			&temp.Country, &temp.City, &temp.District,
+			&temp.Address, &temp.Is_new, &temp.Rating,
+			&temp.Best_product, &temp.Promotion, &temp.Is_active,
+			&temp.Images,
+		); err != nil {
+			return nil, fmt.Errorf("failed to scan row: %w", err)
 		}
 
-		product.Images = images
+		var images []models.ProductImages
+		if err := json.Unmarshal([]byte(temp.Images), &images); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal images JSON: %w", err)
+		}
 
-		products = append(products, product)
+		if totalCount == 0 {
+			totalCount = temp.Total_count
+		}
 
-		totalCount = product.Total_count
+		temp.Products.Images = images
+		products = append(products, temp.Products)
 	}
+
+	totalPages := (totalCount + limit - 1) / limit
 
 	baseURL := os.Getenv("BASE_URL")
 	next := ""
-	if int64(offset+limit) < totalCount {
-		next = fmt.Sprintf("%s/products/get?limit=%d&offset=%d", baseURL, limit, offset+limit)
+	if offset < totalCount {
+		next = fmt.Sprintf("%s/products?limit=%d&offset=%d", baseURL, limit, offset+limit)
 	}
+
 	previous := ""
 	if offset > 0 {
 		prevOffset := offset - limit
 		if prevOffset < 0 {
 			prevOffset = 0
 		}
-		previous = fmt.Sprintf("%s/products/get?limit=%d&offset=%d", baseURL, limit, prevOffset)
+		previous = fmt.Sprintf("%s/products?limit=%d&offset=%d", baseURL, limit, prevOffset)
 	}
 
 	return &models.ProductsPaginate{
-		Count:    totalCount,
-		Results:  products,
-		Next:     next,
-		Previous: previous,
+		Count:      totalCount,
+		Results:    products,
+		Next:       next,
+		Previous:   previous,
+		TotalPages: totalPages,
 	}, nil
 }
 
@@ -195,7 +223,7 @@ func (repository *ProductRepository) GetProductBySlug(slug string) (*models.Prod
 	return &product, nil
 }
 
-func (repository *ProductRepository) getImagesByProductID(productID int64) ([]models.ProductImages, error) {
+func (repository *ProductRepository) getImagesByProductID(productID int) ([]models.ProductImages, error) {
 	imageBaseUrl := os.Getenv("IMAGE_BASE_URL")
 	if imageBaseUrl == "" {
 		return nil, fmt.Errorf("IMAGE_BASE_URL not set")
@@ -220,7 +248,7 @@ func (repository *ProductRepository) getImagesByProductID(productID int64) ([]mo
 	return images, nil
 }
 
-func (repository *ProductRepository) getCommentsByProductId(product_id int64) ([]models.ProductComment, error) {
+func (repository *ProductRepository) getCommentsByProductId(product_id int) ([]models.ProductComment, error) {
 	query := `
 		SELECT 
 			c.id, 
@@ -248,7 +276,7 @@ func (repository *ProductRepository) getCommentsByProductId(product_id int64) ([
 	return comments, nil
 }
 
-func (repository *ProductRepository) getProductTypeById(product_id int64) (*models.ProductType, error) {
+func (repository *ProductRepository) getProductTypeById(product_id int) (*models.ProductType, error) {
 	query := `
 		SELECT 
 			id,
@@ -266,7 +294,7 @@ func (repository *ProductRepository) getProductTypeById(product_id int64) (*mode
 	return &productType, nil
 }
 
-func (repository *ProductRepository) getConveniencesByProductId(product_id int64) ([]models.Convenience, error) {
+func (repository *ProductRepository) getConveniencesByProductId(product_id int) ([]models.Convenience, error) {
 	imageBaseUrl := os.Getenv("IMAGE_BASE_URL")
 	if imageBaseUrl == "" {
 		return nil, fmt.Errorf("IMAGE_BASE_URL not set")
