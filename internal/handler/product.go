@@ -15,7 +15,11 @@ func GetProductList(db *sqlx.DB) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		limit := c.QueryInt("limit", 20)
 		offset := c.QueryInt("offset", 0)
-		user := c.Locals("user").(*token.UserClaims)
+
+		var user token.UserClaims
+		if u, ok := c.Locals("user").(*token.UserClaims); ok && u != nil {
+			user = *u
+		}
 
 		repo := repository.NewProductRepository(db)
 		productService := service.NewProductService(repo)
