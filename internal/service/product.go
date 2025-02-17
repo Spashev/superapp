@@ -13,8 +13,8 @@ func NewProductService(repo *repository.ProductRepository) *ProductService {
 	return &ProductService{repo: repo}
 }
 
-func (s *ProductService) GetAllProducts(limit, offset int) (*models.ProductsPaginate, error) {
-	return s.repo.GetAllProducts(limit, offset)
+func (s *ProductService) GetAllProducts(userId, limit, offset int) (*models.ProductsPaginate, error) {
+	return s.repo.GetAllProducts(userId, limit, offset)
 }
 
 func (s *ProductService) GetProductBySlug(slug string) (models.Product, error) {

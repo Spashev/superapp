@@ -17,6 +17,7 @@ func RegisterRoutes(db *sqlx.DB, tokenMaker *token.JWTMaker) *fiber.App {
 
 	app.Use(middleware.CorsHandler)
 	app.Use(middleware.Logger)
+	app.Use(middleware.AuthMiddleware(db, tokenMaker))
 
 	apiV1 := app.Group("/api/v1")
 	{

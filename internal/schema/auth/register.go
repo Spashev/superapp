@@ -8,5 +8,5 @@ type RegisterReq struct {
 	PhoneNumber string `json:"phone_number" validate:"required"`
 	DateOfBirth string `json:"date_of_birth" validate:"required,date"`
 	Password    string `json:"password" validate:"required,min=6"`
-	IIN         string `json:"iin" validate:"required"`
+	IIN         string `json:"iin"`
 }

@@ -48,6 +48,7 @@ type Products struct {
 	Is_new          bool            `json:"is_new"`
 	Rating          float64         `json:"rating"`
 	Best_product    bool            `json:"best_product"`
+	Is_favorite     bool            `json:"is_favorite"`
 	Promotion       bool            `json:"promotion"`
 	Is_active       bool            `json:"is_active"`
 	Images          []ProductImages `json:"images"`

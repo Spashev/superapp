@@ -8,17 +8,19 @@ import (
 
 	"superapp/internal/repository"
 	"superapp/internal/service"
+	"superapp/internal/util/token"
 )
 
 func GetProductList(db *sqlx.DB) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		limit := c.QueryInt("limit", 20)
 		offset := c.QueryInt("offset", 0)
+		user := c.Locals("user").(*token.UserClaims)
 
 		repo := repository.NewProductRepository(db)
 		productService := service.NewProductService(repo)
 
-		products, err := productService.GetAllProducts(limit, offset)
+		products, err := productService.GetAllProducts(user.UserID, limit, offset)
 		if err != nil {
 			log.Println(err)
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{

@@ -18,7 +18,7 @@ func NewProductRepository(db *sqlx.DB) *ProductRepository {
 	return &ProductRepository{db: db}
 }
 
-func (repository *ProductRepository) GetAllProducts(limit, offset int) (*models.ProductsPaginate, error) {
+func (repository *ProductRepository) GetAllProducts(userId, limit, offset int) (*models.ProductsPaginate, error) {
 	query := `
 		SELECT 
 			COUNT(*) OVER () AS total_count,
@@ -45,6 +45,7 @@ func (repository *ProductRepository) GetAllProducts(limit, offset int) (*models.
 			p.best_product,
 			p.promotion,
 			p.is_active,
+			COALESCE(f.is_favorite, false) AS is_favorite,
 			COALESCE(json_agg(
 				CASE 
 					WHEN pi.id IS NOT NULL THEN jsonb_build_object(
@@ -68,13 +69,19 @@ func (repository *ProductRepository) GetAllProducts(limit, offset int) (*models.
 			FROM likes
 			GROUP BY product_id
 		) l ON p.id = l.product_id
+		LEFT JOIN (
+			SELECT product_id, true AS is_favorite
+			FROM likes
+			WHERE user_id = :userId
+		) f ON p.id = f.product_id
 		LEFT JOIN images pi ON p.id = pi.product_id
-		GROUP BY p.id, u.id, co.id, ci.id, l.like_count
+		GROUP BY p.id, u.id, co.id, ci.id, l.like_count, f.is_favorite
 		ORDER BY p.id ASC
 		LIMIT :limit OFFSET :offset;
 	`
 
 	params := map[string]interface{}{
+		"userId": userId,
 		"limit":  limit,
 		"offset": offset,
 	}
@@ -93,6 +100,7 @@ func (repository *ProductRepository) GetAllProducts(limit, offset int) (*models.
 			models.Products
 			Images      string
 			Total_count int
+			Is_favorite bool
 		}
 
 		if err := rows.Scan(
@@ -104,6 +112,7 @@ func (repository *ProductRepository) GetAllProducts(limit, offset int) (*models.
 			&temp.Country, &temp.City, &temp.District,
 			&temp.Address, &temp.Is_new, &temp.Rating,
 			&temp.Best_product, &temp.Promotion, &temp.Is_active,
+			&temp.Is_favorite,
 			&temp.Images,
 		); err != nil {
 			return nil, fmt.Errorf("failed to scan row: %w", err)
@@ -119,6 +128,8 @@ func (repository *ProductRepository) GetAllProducts(limit, offset int) (*models.
 		}
 
 		temp.Products.Images = images
+		temp.Products.Is_favorite = temp.Is_favorite
+
 		products = append(products, temp.Products)
 	}
 

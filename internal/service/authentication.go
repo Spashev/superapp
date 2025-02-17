@@ -37,14 +37,14 @@ func (s *AuthenticationService) Authenticate(req *schema.AuthLoginReq) (*schema.
 	}
 
 	duration := time.Hour * 24
-	accessToken, err := s.tokenMaker.CreateToken(user.Id, duration)
+	accessToken, err := s.tokenMaker.CreateToken(user.Id, user.Email, duration)
 	if err != nil {
 		log.Println("Failed to create JWT token:", err)
 		return nil, errors.New("failed to generate access token")
 	}
 
 	refreshTokenDuration := time.Hour * 24 * 7
-	refreshToken, err := s.tokenMaker.CreateToken(user.Id, refreshTokenDuration)
+	refreshToken, err := s.tokenMaker.CreateToken(user.Id, user.Email, refreshTokenDuration)
 	if err != nil {
 		log.Println("Failed to create refresh token:", err)
 		return nil, errors.New("failed to generate refresh token")
