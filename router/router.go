@@ -2,6 +2,8 @@ package router
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/logger"
+	"github.com/gofiber/fiber/v2/middleware/requestid"
 	"github.com/jmoiron/sqlx"
 
 	"superapp/internal/handler"
@@ -18,8 +20,10 @@ func RegisterRoutes(db *sqlx.DB, tokenMaker *token.JWTMaker) *fiber.App {
 	})
 
 	app.Use(middleware.CorsHandler)
-	app.Use(middleware.RequestID)
-	app.Use(middleware.Logger)
+	app.Use(requestid.New())
+	app.Use(logger.New(logger.Config{
+		Format: "[${pid} ${locals:requestid}] ${ip}:${port} ${status} - ${method} ${path}\n",
+	}))
 	app.Use(middleware.AuthMiddleware(db, tokenMaker))
 
 	apiV1 := app.Group("/api/v1")
