@@ -1,32 +1,13 @@
 package middleware
 
 import (
-	"fmt"
-	"time"
-
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 )
 
-func Logger(c *fiber.Ctx) error {
-	start := time.Now()
+func RequestID(c *fiber.Ctx) error {
+	uid := uuid.NewString()
+	c.Request().Header.Add("REQUEST-ID", uid)
 
-	err := c.Next()
-
-	duration := time.Since(start)
-	status := c.Response().StatusCode()
-	method := c.Method()
-	path := c.Path()
-
-	var colorStatus string
-	if status >= 400 {
-		colorStatus = "\033[31m"
-	} else if status >= 300 {
-		colorStatus = "\033[33m"
-	} else {
-		colorStatus = "\033[32m"
-	}
-
-	fmt.Printf("%s[INFO] %s - %s %s %d %s\033[0m\n", colorStatus, method, path, time.Now().Format("2006-01-02 15:04:05"), status, duration)
-
-	return err
+	return c.Next()
 }
