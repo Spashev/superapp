@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/gofiber/fiber/v2"
@@ -16,7 +15,8 @@ import (
 func Login(db *sqlx.DB, tokenMaker *token.JWTMaker) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		var loginReq schema.AuthLoginReq
-		if err := json.Unmarshal(c.Body(), &loginReq); err != nil {
+
+		if err := c.BodyParser(&loginReq); err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 				"error": "invalid request body",
 			})
@@ -55,7 +55,7 @@ func UserMe(db *sqlx.DB, tokenMaker *token.JWTMaker) fiber.Handler {
 func Register(db *sqlx.DB, tokenMaker *token.JWTMaker) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		var registerReq schema.RegisterReq
-		if err := json.Unmarshal(c.Body(), &registerReq); err != nil {
+		if err := c.BodyParser(&registerReq); err != nil {
 			fmt.Println("Error decoding JSON:", err)
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 				"error": "Invalid request body",
