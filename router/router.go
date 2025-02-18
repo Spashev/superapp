@@ -11,8 +11,10 @@ import (
 
 func RegisterRoutes(db *sqlx.DB, tokenMaker *token.JWTMaker) *fiber.App {
 	app := fiber.New(fiber.Config{
-		ServerHeader: "bookit",
-		AppName:      "Bookit",
+		ServerHeader:  "Bookit",
+		AppName:       "Bookit App v0.1-beta",
+		CaseSensitive: true,
+		Prefork:       true, //TODO: need check it on server
 	})
 
 	app.Use(middleware.CorsHandler)
