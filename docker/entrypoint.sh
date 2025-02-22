@@ -18,7 +18,7 @@ done
 echo "PostgreSQL доступен, запускаем миграции..."
 
 # Запуск миграций
-migrate -path /app/database -database "$DATABASE_DSN" up
+migrate -path /app/database/migrations -database "$DATABASE_DSN" up
 
 echo "Миграции применены, запускаем сервис..."
 exec "$@"
