@@ -234,6 +234,81 @@ func (repository *ProductRepository) GetProductBySlug(slug string) (*models.Prod
 	return &product, nil
 }
 
+func (repository *ProductRepository) LikeProductBySlug(slug string) (*models.Product, error) {
+	query := `
+		SELECT 
+			p.id,
+			p.slug,
+			p.name_ru AS name,
+			p.price_per_night,
+			p.price_per_week,
+			p.price_per_month,
+			u.id AS "owner.id",
+			u.email AS "owner.email",
+			u.first_name AS "owner.first_name",
+			u.last_name AS "owner.last_name",
+			u.middle_name AS "owner.middle_name",
+			u.phone_number AS "owner.phone_number",
+			u.avatar AS "owner.avatar",
+			p.rooms_qty,
+			p.guest_qty,
+			p.bed_qty,
+			p.bedroom_qty,
+			p.toilet_qty,
+			p.bath_qty,
+			p.description_ru AS description,
+			co.name_ru AS country,
+			ci.name_ru AS city,
+			p.district_ru AS district,
+			p.address_ru AS address,
+			p.like_count,
+			p.lng,
+			p.lat,
+			COALESCE(AVG(l.like_count), 0) AS average_likes_rating,
+			p.phone_number,
+			CASE
+				WHEN p.created_at >= NOW() - INTERVAL '10 days' THEN true
+				ELSE false
+			END AS is_new,
+			p.best_product,
+			p.promotion,
+			p.type_id
+		FROM 
+			products p
+		LEFT JOIN users u ON p.owner_id = u.id
+		LEFT JOIN country co ON p.country_id = co.id
+		LEFT JOIN city ci ON p.city_id = ci.id
+		LEFT JOIN (
+			SELECT product_id, COUNT(*) AS like_count
+			FROM likes
+			GROUP BY product_id
+		) l ON p.id = l.product_id
+		WHERE p.slug = $1
+		GROUP BY 
+			p.id, 
+			u.id, 
+			co.id,
+			ci.id
+		ORDER BY p.created_at;
+	`
+
+	var product models.Product
+	err := repository.db.QueryRowx(query, slug).StructScan(&product)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch product by slug: %w", err)
+	}
+
+	product.Images, _ = repository.getImagesByProductID(product.Id)
+	product.Comments, _ = repository.getCommentsByProductId(product.Id)
+	productType, _ := repository.getProductTypeById(product.Type_id)
+	if productType != nil {
+		product.Type = *productType
+	}
+	product.Conveniences, _ = repository.getConveniencesByProductId(product.Id)
+
+	return &product, nil
+}
+
 func (repository *ProductRepository) getImagesByProductID(productID int) ([]models.ProductImages, error) {
 	imageBaseUrl := os.Getenv("IMAGE_BASE_URL")
 	if imageBaseUrl == "" {

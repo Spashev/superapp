@@ -12,10 +12,10 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
+	"superapp/cmd/app/router"
 	"superapp/config"
 	"superapp/database"
 	"superapp/internal/util/token"
-	"superapp/router"
 )
 
 type App struct {

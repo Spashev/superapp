@@ -24,3 +24,11 @@ func (s *ProductService) GetProductBySlug(slug string) (models.Product, error) {
 	}
 	return *productPtr, nil
 }
+
+func (s *ProductService) LikeProductBySlug(slug string) (models.Product, error) {
+	productPtr, err := s.repo.LikeProductBySlug(slug)
+	if err != nil {
+		return models.Product{}, err
+	}
+	return *productPtr, nil
+}

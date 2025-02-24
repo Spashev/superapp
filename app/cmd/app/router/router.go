@@ -16,7 +16,6 @@ func RegisterRoutes(db *sqlx.DB, tokenMaker *token.JWTMaker) *fiber.App {
 		ServerHeader:  "Bookit",
 		AppName:       "Bookit App v0.1-beta",
 		CaseSensitive: true,
-		// Prefork:       true, //TODO: need check it on server
 	})
 
 	app.Use(middleware.CorsHandler)
@@ -34,6 +33,7 @@ func RegisterRoutes(db *sqlx.DB, tokenMaker *token.JWTMaker) *fiber.App {
 
 		apiV1.Get("/products", middleware.Paginate, handler.GetProductList(db))
 		apiV1.Get("/products/:slug", handler.GetProductBySlug(db))
+		apiV1.Get("/products/:slug/like", handler.LikeProductBySlug(db))
 		apiV1.Get("/categories", handler.GetCategories(db))
 	}
 

@@ -59,3 +59,27 @@ func GetProductBySlug(db *sqlx.DB) fiber.Handler {
 		return c.Status(fiber.StatusOK).JSON(product)
 	}
 }
+
+func LikeProductBySlug(db *sqlx.DB) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		slug := c.Params("slug")
+		if slug == "" {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": "Slug is required",
+			})
+		}
+
+		repo := repository.NewProductRepository(db)
+		productService := service.NewProductService(repo)
+
+		product, err := productService.LikeProductBySlug(slug)
+		if err != nil {
+			log.Println(err)
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": "Failed to fetch product",
+			})
+		}
+
+		return c.Status(fiber.StatusOK).JSON(product)
+	}
+}
