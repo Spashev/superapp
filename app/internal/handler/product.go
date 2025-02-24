@@ -6,9 +6,9 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/jmoiron/sqlx"
 
-	"superapp/internal/repository"
-	"superapp/internal/service"
-	"superapp/internal/util/token"
+	"github.com/spashev/superapp/internal/repository"
+	"github.com/spashev/superapp/internal/service"
+	"github.com/spashev/superapp/internal/util/token"
 )
 
 func GetProductList(db *sqlx.DB) fiber.Handler {

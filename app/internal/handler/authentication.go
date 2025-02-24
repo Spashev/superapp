@@ -6,10 +6,10 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/jmoiron/sqlx"
 
-	"superapp/internal/repository"
-	schema "superapp/internal/schema/auth"
-	"superapp/internal/service"
-	"superapp/internal/util/token"
+	"github.com/spashev/superapp/internal/repository"
+	schema "github.com/spashev/superapp/internal/schema/auth"
+	"github.com/spashev/superapp/internal/service"
+	"github.com/spashev/superapp/internal/util/token"
 )
 
 func Login(db *sqlx.DB, tokenMaker *token.JWTMaker) fiber.Handler {

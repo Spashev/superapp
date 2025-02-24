@@ -1,8 +1,8 @@
 package service
 
 import (
-	"superapp/internal/models"
-	"superapp/internal/repository"
+	"github.com/spashev/superapp/internal/models"
+	"github.com/spashev/superapp/internal/repository"
 )
 
 type CategoryService struct {

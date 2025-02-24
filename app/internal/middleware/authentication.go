@@ -6,7 +6,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/jmoiron/sqlx"
 
-	"superapp/internal/util/token"
+	"github.com/spashev/superapp/internal/util/token"
 )
 
 func AuthMiddleware(db *sqlx.DB, tokenMaker *token.JWTMaker) fiber.Handler {

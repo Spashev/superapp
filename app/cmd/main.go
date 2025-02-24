@@ -1,8 +1,8 @@
 package main
 
 import (
-	"superapp/cmd/app"
-	initializers "superapp/initializers"
+	"github.com/spashev/superapp/cmd/app"
+	initializers "github.com/spashev/superapp/initializers"
 )
 
 func init() {

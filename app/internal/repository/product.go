@@ -7,7 +7,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 
-	"superapp/internal/models"
+	"github.com/spashev/superapp/internal/models"
 )
 
 type ProductRepository struct {

@@ -8,11 +8,11 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"superapp/internal/models"
-	"superapp/internal/repository"
-	schema "superapp/internal/schema/auth"
-	"superapp/internal/util"
-	"superapp/internal/util/token"
+	"github.com/spashev/superapp/internal/models"
+	"github.com/spashev/superapp/internal/repository"
+	schema "github.com/spashev/superapp/internal/schema/auth"
+	"github.com/spashev/superapp/internal/util"
+	"github.com/spashev/superapp/internal/util/token"
 )
 
 type AuthenticationService struct {

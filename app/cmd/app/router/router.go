@@ -6,9 +6,9 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/requestid"
 	"github.com/jmoiron/sqlx"
 
-	"superapp/internal/handler"
-	"superapp/internal/middleware"
-	"superapp/internal/util/token"
+	"github.com/spashev/superapp/internal/handler"
+	"github.com/spashev/superapp/internal/middleware"
+	"github.com/spashev/superapp/internal/util/token"
 )
 
 func RegisterRoutes(db *sqlx.DB, tokenMaker *token.JWTMaker) *fiber.App {
