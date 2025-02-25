@@ -25,7 +25,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "auth"
+                    "Authentication"
                 ],
                 "summary": "User login",
                 "parameters": [
@@ -67,7 +67,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "auth"
+                    "Authentication"
                 ],
                 "summary": "Get user details",
                 "responses": {
@@ -96,7 +96,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "auth"
+                    "Authentication"
                 ],
                 "summary": "User registration",
                 "parameters": [
@@ -133,7 +133,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "categories"
+                    "Categories/Conveniences"
                 ],
                 "summary": "Get all categories",
                 "responses": {
@@ -150,6 +150,146 @@ const docTemplate = `{
                         "description": "Failed to fetch categories",
                         "schema": {
                             "$ref": "#/definitions/fiber.Map"
+                        }
+                    }
+                }
+            }
+        },
+        "/cities": {
+            "get": {
+                "description": "Fetches all available cities",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Countries/Cities"
+                ],
+                "summary": "Get all cities",
+                "responses": {
+                    "200": {
+                        "description": "List of cities",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.City"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to fetch cities",
+                        "schema": {
+                            "$ref": "#/definitions/fiber.Map"
+                        }
+                    }
+                }
+            }
+        },
+        "/conveniences": {
+            "get": {
+                "description": "Fetches all available conveniences",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Categories/Conveniences"
+                ],
+                "summary": "Get all conveniences",
+                "responses": {
+                    "200": {
+                        "description": "List of conveniences",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Category"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to fetch conveniences",
+                        "schema": {
+                            "$ref": "#/definitions/fiber.Map"
+                        }
+                    }
+                }
+            }
+        },
+        "/countries": {
+            "get": {
+                "description": "Fetches all available countries",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Countries/Cities"
+                ],
+                "summary": "Get all countries",
+                "responses": {
+                    "200": {
+                        "description": "List of countries",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Country"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to fetch countries",
+                        "schema": {
+                            "$ref": "#/definitions/fiber.Map"
+                        }
+                    }
+                }
+            }
+        },
+        "/country/{id}/cities": {
+            "get": {
+                "description": "Get all cities in the specified country by their countryID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Countries/Cities"
+                ],
+                "summary": "Get all cities in the specified country",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Country ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of cities",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.City"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     }
                 }
@@ -383,6 +523,20 @@ const docTemplate = `{
                 }
             }
         },
+        "models.City": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "postall_code": {
+                    "type": "string"
+                }
+            }
+        },
         "models.Convenience": {
             "type": "object",
             "properties": {
@@ -396,6 +550,20 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "slug": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.Country": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
                     "type": "string"
                 }
             }

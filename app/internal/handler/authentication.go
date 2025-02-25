@@ -16,7 +16,7 @@ import (
 // Login handles user authentication
 // @Summary User login
 // @Description Authenticate user and return access tokens
-// @Tags auth
+// @Tags Authentication
 // @Accept json
 // @Produce json
 // @Param request body schema.AuthLoginReq true "User credentials"
@@ -50,7 +50,7 @@ func Login(db *sqlx.DB, tokenMaker *token.JWTMaker) fiber.Handler {
 // UserMe retrieves authenticated user information
 // @Summary Get user details
 // @Description Returns user details for the authenticated user
-// @Tags auth
+// @Tags Authentication
 // @Produce json
 // @Success 200 {object} models.User "User details"
 // @Failure 401 {object} fiber.Map "Unauthorized"
@@ -75,7 +75,7 @@ func UserMe(db *sqlx.DB, tokenMaker *token.JWTMaker) fiber.Handler {
 // Register handles user registration
 // @Summary User registration
 // @Description Register a new user
-// @Tags auth
+// @Tags Authentication
 // @Accept json
 // @Produce json
 // @Param request body schema.RegisterReq true "User registration data"

@@ -14,6 +14,15 @@ definitions:
       slug:
         type: string
     type: object
+  models.City:
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      postall_code:
+        type: string
+    type: object
   models.Convenience:
     properties:
       icon:
@@ -23,6 +32,15 @@ definitions:
       name:
         type: string
       slug:
+        type: string
+    type: object
+  models.Country:
+    properties:
+      code:
+        type: string
+      id:
+        type: integer
+      name:
         type: string
     type: object
   models.OwnerProduct:
@@ -270,7 +288,7 @@ paths:
             $ref: '#/definitions/fiber.Map'
       summary: User login
       tags:
-      - auth
+      - Authentication
   /auth/me:
     get:
       description: Returns user details for the authenticated user
@@ -289,7 +307,7 @@ paths:
       - BearerAuth: []
       summary: Get user details
       tags:
-      - auth
+      - Authentication
   /auth/register:
     post:
       consumes:
@@ -315,7 +333,7 @@ paths:
             $ref: '#/definitions/fiber.Map'
       summary: User registration
       tags:
-      - auth
+      - Authentication
   /categories:
     get:
       description: Fetches all available categories
@@ -334,7 +352,99 @@ paths:
             $ref: '#/definitions/fiber.Map'
       summary: Get all categories
       tags:
-      - categories
+      - Categories/Conveniences
+  /cities:
+    get:
+      description: Fetches all available cities
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of cities
+          schema:
+            items:
+              $ref: '#/definitions/models.City'
+            type: array
+        "500":
+          description: Failed to fetch cities
+          schema:
+            $ref: '#/definitions/fiber.Map'
+      summary: Get all cities
+      tags:
+      - Countries/Cities
+  /conveniences:
+    get:
+      description: Fetches all available conveniences
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of conveniences
+          schema:
+            items:
+              $ref: '#/definitions/models.Category'
+            type: array
+        "500":
+          description: Failed to fetch conveniences
+          schema:
+            $ref: '#/definitions/fiber.Map'
+      summary: Get all conveniences
+      tags:
+      - Categories/Conveniences
+  /countries:
+    get:
+      description: Fetches all available countries
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of countries
+          schema:
+            items:
+              $ref: '#/definitions/models.Country'
+            type: array
+        "500":
+          description: Failed to fetch countries
+          schema:
+            $ref: '#/definitions/fiber.Map'
+      summary: Get all countries
+      tags:
+      - Countries/Cities
+  /country/{id}/cities:
+    get:
+      consumes:
+      - application/json
+      description: Get all cities in the specified country by their countryID
+      parameters:
+      - description: Country ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of cities
+          schema:
+            items:
+              $ref: '#/definitions/models.City'
+            type: array
+        "400":
+          description: Bad request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get all cities in the specified country
+      tags:
+      - Countries/Cities
   /products:
     get:
       consumes:
