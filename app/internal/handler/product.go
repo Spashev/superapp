@@ -84,18 +84,18 @@ func GetProductBySlug(db *sqlx.DB) fiber.Handler {
 	}
 }
 
-// ToggleLikeById increases the like count of a product
+// LikeProductById increases the like count of a product
 // @Summary Like a product by slug
 // @Description Increments the product's like count
 // @Tags Products
 // @Accept json
 // @Produce json
 // @Param id path int true "Product ID"
-// @Success 200 {object} models.Product
+// @Success 200 {object} map[string]string "Product likeed successfully"
 // @Failure 400 {object} map[string]string "Bad request"
 // @Failure 500 {object} map[string]string "Server error"
 // @Router /products/{id}/like [get]
-func ToggleLikeById(db *sqlx.DB) fiber.Handler {
+func LikeProductById(db *sqlx.DB) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		params := c.Params("id")
 		if params == "" {
@@ -124,15 +124,68 @@ func ToggleLikeById(db *sqlx.DB) fiber.Handler {
 		repo := repository.NewProductRepository(db)
 		productService := service.NewProductService(repo)
 
-		if err := productService.ToggleLike(user.UserID, id); err != nil {
+		if err := productService.LikeProductById(user.UserID, id); err != nil {
 			log.Println(err)
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"error": "Failed to toggle like product",
+				"error": "Failed to like product",
 			})
 		}
 
 		return c.Status(fiber.StatusOK).JSON(fiber.Map{
-			"message": "Product toggle like successfully",
+			"message": "Product liked successfully",
+		})
+	}
+}
+
+// DislikeProductById increases the like count of a product
+// @Summary Like a product by slug
+// @Description Increments the product's like count
+// @Tags Products
+// @Accept json
+// @Produce json
+// @Param id path int true "Product ID"
+// @Success 200 {object} map[string]string "Product disliked successfully"
+// @Failure 400 {object} map[string]string "Bad request"
+// @Failure 500 {object} map[string]string "Server error"
+// @Router /products/{id}/like [get]
+func DislikeProductById(db *sqlx.DB) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		params := c.Params("id")
+		if params == "" {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": "Id is required",
+			})
+		}
+
+		id, err := strconv.Atoi(params)
+		if err != nil {
+			log.Println(err)
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": "Id must be an integer",
+			})
+		}
+
+		var user token.UserClaims
+		if u, ok := c.Locals("user").(*token.UserClaims); ok && u != nil {
+			user = *u
+		} else {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"error": "Unauthorized",
+			})
+		}
+
+		repo := repository.NewProductRepository(db)
+		productService := service.NewProductService(repo)
+
+		if err := productService.DislikeProductById(user.UserID, id); err != nil {
+			log.Println(err)
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": "Failed to dislike product",
+			})
+		}
+
+		return c.Status(fiber.StatusOK).JSON(fiber.Map{
+			"message": "Product disliked successfully",
 		})
 	}
 }
