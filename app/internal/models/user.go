@@ -1,5 +1,6 @@
 package models
 
+// Category represents a user
 type User struct {
 	Id            int    `json:"id"`
 	Email         string `json:"email"`
@@ -14,6 +15,7 @@ type User struct {
 	Date_joined   string `json:"date_joined"`
 }
 
+// Category represents a user
 type CreateUser struct {
 	Id            int    `json:"id"`
 	Email         string `json:"email"`
@@ -30,6 +32,7 @@ type CreateUser struct {
 	Date_joined   string `json:"date_joined"`
 }
 
+// Category represents a product owner
 type OwnerProduct struct {
 	Id           int    `json:"id"`
 	Email        string `json:"email"`

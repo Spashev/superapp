@@ -76,7 +76,7 @@ func LikeProductBySlug(db *sqlx.DB) fiber.Handler {
 		if err != nil {
 			log.Println(err)
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"error": "Failed to fetch product",
+				"error": "Failed to like product",
 			})
 		}
 

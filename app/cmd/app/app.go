@@ -12,7 +12,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"github.com/spashev/superapp/cmd/app/router"
+	"github.com/spashev/superapp/cmd/router"
 	"github.com/spashev/superapp/config"
 	"github.com/spashev/superapp/database"
 	"github.com/spashev/superapp/internal/util/token"

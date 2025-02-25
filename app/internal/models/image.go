@@ -1,5 +1,6 @@
 package models
 
+// Category represents a product images
 type ProductImages struct {
 	ID        int    `json:"id"`
 	Thumbnail string `json:"thumbnail"`

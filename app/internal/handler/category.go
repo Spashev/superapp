@@ -10,6 +10,14 @@ import (
 	"github.com/spashev/superapp/internal/service"
 )
 
+// GetCategories retrieves a list of all categories
+// @Summary Get all categories
+// @Description Fetches all available categories
+// @Tags Categories
+// @Produce json
+// @Success 200 {array} struct{ID int `json:"id"`; Name string `json:"name"`} "List of categories"
+// @Failure 500 {object} map[string]string "Server error"
+// @Router /categories [get]
 func GetCategories(db *sqlx.DB) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		repo := repository.NewCategoryRepository(db)

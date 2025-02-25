@@ -1,5 +1,6 @@
 package models
 
+// Category represents a user comment
 type ProductCommentUser struct {
 	Id         int    `json:"id"`
 	Email      string `json:"email"`
@@ -8,6 +9,7 @@ type ProductCommentUser struct {
 	Avatar     string `json:"avatar"`
 }
 
+// Category represents a product comments
 type ProductComment struct {
 	ID         int                `json:"id"`
 	Content    string             `json:"content"`

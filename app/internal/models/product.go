@@ -1,5 +1,6 @@
 package models
 
+// Category represents a product
 type Product struct {
 	Id                   int              `json:"id"`
 	Slug                 string           `json:"slug"`
@@ -35,6 +36,7 @@ type Product struct {
 	Type_id              int              `json:"type_id"`
 }
 
+// Category represents a product
 type Products struct {
 	Id              int             `json:"id"`
 	Slug            string          `json:"slug"`
@@ -54,6 +56,7 @@ type Products struct {
 	Images          []ProductImages `json:"images"`
 }
 
+// Category represents a product pagination
 type ProductsPaginate struct {
 	TotalPages int        `json:"total_pages"`
 	Count      int        `json:"count"`

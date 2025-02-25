@@ -1,5 +1,6 @@
 package models
 
+// Category represents a product convenience
 type Convenience struct {
 	ID   int    `json:"id"`
 	Name string `json:"name"`
