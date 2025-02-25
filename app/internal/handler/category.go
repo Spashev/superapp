@@ -6,6 +6,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/jmoiron/sqlx"
 
+	_ "github.com/spashev/superapp/internal/models"
 	"github.com/spashev/superapp/internal/repository"
 	"github.com/spashev/superapp/internal/service"
 )
@@ -13,10 +14,10 @@ import (
 // GetCategories retrieves a list of all categories
 // @Summary Get all categories
 // @Description Fetches all available categories
-// @Tags Categories
+// @Tags categories
 // @Produce json
-// @Success 200 {array} struct{ID int `json:"id"`; Name string `json:"name"`} "List of categories"
-// @Failure 500 {object} map[string]string "Server error"
+// @Success 200 {array} models.Category "List of categories"
+// @Failure 500 {object} fiber.Map "Failed to fetch categories"
 // @Router /categories [get]
 func GetCategories(db *sqlx.DB) fiber.Handler {
 	return func(c *fiber.Ctx) error {

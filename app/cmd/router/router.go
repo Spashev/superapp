@@ -5,7 +5,6 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/requestid"
 	"github.com/jmoiron/sqlx"
 
-	_ "github.com/spashev/superapp/docs"
 	"github.com/spashev/superapp/initializers"
 	"github.com/spashev/superapp/internal/handler"
 	"github.com/spashev/superapp/internal/middleware"

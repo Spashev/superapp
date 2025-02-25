@@ -1,6 +1,7 @@
 package models
 
 // Category represents a product
+// swagger:model
 type Product struct {
 	Id                   int              `json:"id"`
 	Slug                 string           `json:"slug"`
@@ -37,6 +38,7 @@ type Product struct {
 }
 
 // Category represents a product
+// swagger:model
 type Products struct {
 	Id              int             `json:"id"`
 	Slug            string          `json:"slug"`
@@ -57,6 +59,7 @@ type Products struct {
 }
 
 // Category represents a product pagination
+// swagger:model
 type ProductsPaginate struct {
 	TotalPages int        `json:"total_pages"`
 	Count      int        `json:"count"`

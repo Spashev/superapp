@@ -1,4 +1,438 @@
+basePath: /api/v1
+definitions:
+  fiber.Map:
+    additionalProperties: true
+    type: object
+  models.Category:
+    properties:
+      icon:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      slug:
+        type: string
+    type: object
+  models.Convenience:
+    properties:
+      icon:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      slug:
+        type: string
+    type: object
+  models.OwnerProduct:
+    properties:
+      avatar:
+        type: string
+      email:
+        type: string
+      first_name:
+        type: string
+      id:
+        type: integer
+      last_name:
+        type: string
+      middle_name:
+        type: string
+      phone_number:
+        type: string
+    type: object
+  models.Product:
+    properties:
+      address:
+        type: string
+      bath_qty:
+        type: integer
+      bed_qty:
+        type: integer
+      bedroom_qty:
+        type: integer
+      best_product:
+        type: boolean
+      bookings:
+        items:
+          type: string
+        type: array
+      city:
+        type: string
+      comments:
+        items:
+          $ref: '#/definitions/models.ProductComment'
+        type: array
+      convenience:
+        items:
+          $ref: '#/definitions/models.Convenience'
+        type: array
+      country:
+        type: string
+      description:
+        type: string
+      district:
+        type: string
+      guest_qty:
+        type: integer
+      id:
+        type: integer
+      images:
+        items:
+          $ref: '#/definitions/models.ProductImages'
+        type: array
+      is_new:
+        type: boolean
+      lat:
+        type: string
+      like_count:
+        type: integer
+      lng:
+        type: string
+      name:
+        type: string
+      owner:
+        $ref: '#/definitions/models.OwnerProduct'
+      phone_number:
+        type: string
+      price_per_month:
+        type: integer
+      price_per_night:
+        type: integer
+      price_per_week:
+        type: integer
+      promotion:
+        type: boolean
+      rating:
+        type: number
+      rooms_qty:
+        type: integer
+      slug:
+        type: string
+      toilet_qty:
+        type: integer
+      type:
+        $ref: '#/definitions/models.ProductType'
+      type_id:
+        type: integer
+    type: object
+  models.ProductComment:
+    properties:
+      content:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: integer
+      rating:
+        type: integer
+      user:
+        $ref: '#/definitions/models.ProductCommentUser'
+    type: object
+  models.ProductCommentUser:
+    properties:
+      avatar:
+        type: string
+      email:
+        type: string
+      first_name:
+        type: string
+      id:
+        type: integer
+      last_name:
+        type: string
+    type: object
+  models.ProductImages:
+    properties:
+      height:
+        type: integer
+      id:
+        type: integer
+      is_label:
+        type: boolean
+      mimetype:
+        type: string
+      original:
+        type: string
+      thumbnail:
+        type: string
+      width:
+        type: integer
+    type: object
+  models.ProductType:
+    properties:
+      icon:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+    type: object
+  models.User:
+    properties:
+      avatar:
+        type: string
+      date_joined:
+        type: string
+      date_of_birth:
+        type: string
+      email:
+        type: string
+      first_name:
+        type: string
+      id:
+        type: integer
+      iin:
+        type: string
+      is_active:
+        type: boolean
+      last_name:
+        type: string
+      middle_name:
+        type: string
+      phone_number:
+        type: string
+    type: object
+  schema.AuthLoginReq:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  schema.AuthLoginRes:
+    properties:
+      access_token:
+        type: string
+      refresh_token:
+        type: string
+    type: object
+  schema.RegisterReq:
+    properties:
+      date_of_birth:
+        type: string
+      email:
+        type: string
+      first_name:
+        type: string
+      iin:
+        type: string
+      last_name:
+        type: string
+      middle_name:
+        type: string
+      password:
+        minLength: 6
+        type: string
+      phone_number:
+        type: string
+    required:
+    - date_of_birth
+    - email
+    - first_name
+    - last_name
+    - password
+    - phone_number
+    type: object
+host: localhost:8080
 info:
   contact: {}
-paths: {}
+  description: API documentation for SuperApp
+  title: SuperApp API
+  version: "1.0"
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user and return access tokens
+      parameters:
+      - description: User credentials
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/schema.AuthLoginReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully authenticated
+          schema:
+            $ref: '#/definitions/schema.AuthLoginRes'
+        "400":
+          description: Invalid request body or credentials
+          schema:
+            $ref: '#/definitions/fiber.Map'
+      summary: User login
+      tags:
+      - auth
+  /auth/me:
+    get:
+      description: Returns user details for the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User details
+          schema:
+            $ref: '#/definitions/models.User'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/fiber.Map'
+      security:
+      - BearerAuth: []
+      summary: Get user details
+      tags:
+      - auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Register a new user
+      parameters:
+      - description: User registration data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/schema.RegisterReq'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Registration successful
+          schema:
+            type: string
+        "400":
+          description: Invalid request body or registration error
+          schema:
+            $ref: '#/definitions/fiber.Map'
+      summary: User registration
+      tags:
+      - auth
+  /categories:
+    get:
+      description: Fetches all available categories
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of categories
+          schema:
+            items:
+              $ref: '#/definitions/models.Category'
+            type: array
+        "500":
+          description: Failed to fetch categories
+          schema:
+            $ref: '#/definitions/fiber.Map'
+      summary: Get all categories
+      tags:
+      - categories
+  /products:
+    get:
+      consumes:
+      - application/json
+      description: Returns a paginated list of products
+      parameters:
+      - default: 20
+        description: Limit
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: Offset
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Product'
+            type: array
+        "500":
+          description: Server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get a list of products
+      tags:
+      - Products
+  /products/{slug}:
+    get:
+      consumes:
+      - application/json
+      description: Returns product details
+      parameters:
+      - description: Product slug
+        in: path
+        name: slug
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Product'
+        "400":
+          description: Bad request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get a product by slug
+      tags:
+      - Products
+  /products/{slug}/like:
+    get:
+      consumes:
+      - application/json
+      description: Increments the product's like count
+      parameters:
+      - description: Product slug
+        in: path
+        name: slug
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Product'
+        "400":
+          description: Bad request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Like a product by slug
+      tags:
+      - Products
 swagger: "2.0"

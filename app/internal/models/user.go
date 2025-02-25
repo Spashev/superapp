@@ -1,6 +1,7 @@
 package models
 
 // Category represents a user
+// swagger:model
 type User struct {
 	Id            int    `json:"id"`
 	Email         string `json:"email"`
@@ -16,6 +17,7 @@ type User struct {
 }
 
 // Category represents a user
+// swagger:model
 type CreateUser struct {
 	Id            int    `json:"id"`
 	Email         string `json:"email"`
@@ -33,6 +35,7 @@ type CreateUser struct {
 }
 
 // Category represents a product owner
+// swagger:model
 type OwnerProduct struct {
 	Id           int    `json:"id"`
 	Email        string `json:"email"`

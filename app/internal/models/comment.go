@@ -1,6 +1,7 @@
 package models
 
 // Category represents a user comment
+// swagger:model
 type ProductCommentUser struct {
 	Id         int    `json:"id"`
 	Email      string `json:"email"`
@@ -10,6 +11,7 @@ type ProductCommentUser struct {
 }
 
 // Category represents a product comments
+// swagger:model
 type ProductComment struct {
 	ID         int                `json:"id"`
 	Content    string             `json:"content"`

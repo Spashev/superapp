@@ -1,6 +1,7 @@
 package models
 
 // Category represents a favorite products
+// swagger:model
 type FavoriteProducts struct {
 	Id        int `json:"id"`
 	LikeId    int `json:"like_id"`
@@ -9,6 +10,7 @@ type FavoriteProducts struct {
 }
 
 // Category represents a product likes
+// swagger:model
 type Like struct {
 	Id        int `json:"id"`
 	LikeId    int `json:"like_id"`

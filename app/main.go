@@ -1,3 +1,8 @@
+// @title SuperApp API
+// @version 1.0
+// @description API documentation for SuperApp
+// @host localhost:8080
+// @BasePath /api/v1
 package main
 
 import (

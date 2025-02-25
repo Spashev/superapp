@@ -13,7 +13,7 @@ ifeq (manage,$(firstword $(MAKECMDGOALS)))
 endif
 
 run: ## Run go server
-	go run ./cmd/main.go
+	go run ./main.go
 build: ## Build project
 	go build -o ./bin/bookit ./cmd/main.go
 swagger: ## Generate swagger

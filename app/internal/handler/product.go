@@ -6,11 +6,23 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/jmoiron/sqlx"
 
+	_ "github.com/spashev/superapp/internal/models"
 	"github.com/spashev/superapp/internal/repository"
 	"github.com/spashev/superapp/internal/service"
 	"github.com/spashev/superapp/internal/util/token"
 )
 
+// GetProductList retrieves a list of products
+// @Summary Get a list of products
+// @Description Returns a paginated list of products
+// @Tags Products
+// @Accept json
+// @Produce json
+// @Param limit query int false "Limit" default(20)
+// @Param offset query int false "Offset" default(0)
+// @Success 200 {array} models.Product
+// @Failure 500 {object} map[string]string "Server error"
+// @Router /products [get]
 func GetProductList(db *sqlx.DB) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		limit := c.QueryInt("limit", 20)
@@ -36,6 +48,17 @@ func GetProductList(db *sqlx.DB) fiber.Handler {
 	}
 }
 
+// GetProductBySlug retrieves product information by slug
+// @Summary Get a product by slug
+// @Description Returns product details
+// @Tags Products
+// @Accept json
+// @Produce json
+// @Param slug path string true "Product slug"
+// @Success 200 {object} models.Product
+// @Failure 400 {object} map[string]string "Bad request"
+// @Failure 500 {object} map[string]string "Server error"
+// @Router /products/{slug} [get]
 func GetProductBySlug(db *sqlx.DB) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		slug := c.Params("slug")
@@ -60,6 +83,17 @@ func GetProductBySlug(db *sqlx.DB) fiber.Handler {
 	}
 }
 
+// LikeProductBySlug increases the like count of a product
+// @Summary Like a product by slug
+// @Description Increments the product's like count
+// @Tags Products
+// @Accept json
+// @Produce json
+// @Param slug path string true "Product slug"
+// @Success 200 {object} models.Product
+// @Failure 400 {object} map[string]string "Bad request"
+// @Failure 500 {object} map[string]string "Server error"
+// @Router /products/{slug}/like [get]
 func LikeProductBySlug(db *sqlx.DB) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		slug := c.Params("slug")
@@ -76,7 +110,7 @@ func LikeProductBySlug(db *sqlx.DB) fiber.Handler {
 		if err != nil {
 			log.Println(err)
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"error": "Failed to like product",
+				"error": "Failed to fetch product",
 			})
 		}
 
