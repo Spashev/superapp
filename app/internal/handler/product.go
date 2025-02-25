@@ -94,7 +94,7 @@ func GetProductBySlug(db *sqlx.DB) fiber.Handler {
 // @Success 200 {object} map[string]string "Product likeed successfully"
 // @Failure 400 {object} map[string]string "Bad request"
 // @Failure 500 {object} map[string]string "Server error"
-// @Router /products/{id}/like [get]
+// @Router /products/{id}/like [post]
 func LikeProductById(db *sqlx.DB) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		params := c.Params("id")
@@ -137,8 +137,8 @@ func LikeProductById(db *sqlx.DB) fiber.Handler {
 	}
 }
 
-// DislikeProductById increases the like count of a product
-// @Summary Like a product by slug
+// DislikeProductById decreases the like count of a product
+// @Summary Dislike a product by id
 // @Description Increments the product's like count
 // @Tags Products
 // @Accept json
@@ -147,7 +147,7 @@ func LikeProductById(db *sqlx.DB) fiber.Handler {
 // @Success 200 {object} map[string]string "Product disliked successfully"
 // @Failure 400 {object} map[string]string "Bad request"
 // @Failure 500 {object} map[string]string "Server error"
-// @Router /products/{id}/like [get]
+// @Router /products/{id}/like [delete]
 func DislikeProductById(db *sqlx.DB) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		params := c.Params("id")

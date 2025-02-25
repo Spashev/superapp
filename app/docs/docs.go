@@ -206,9 +206,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/products/{slug}": {
-            "get": {
-                "description": "Returns product details",
+        "/products/{id}/like": {
+            "post": {
+                "description": "Increments the product's like count",
                 "consumes": [
                     "application/json"
                 ],
@@ -218,21 +218,75 @@ const docTemplate = `{
                 "tags": [
                     "Products"
                 ],
-                "summary": "Get a product by slug",
+                "summary": "Like a product by slug",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "Product slug",
-                        "name": "slug",
+                        "type": "integer",
+                        "description": "Product ID",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Product likeed successfully",
                         "schema": {
-                            "$ref": "#/definitions/models.Product"
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Increments the product's like count",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Dislike a product by id",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Product ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Product disliked successfully",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     },
                     "400": {
@@ -256,9 +310,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/products/{slug}/like": {
+        "/products/{slug}": {
             "get": {
-                "description": "Increments the product's like count",
+                "description": "Returns product details",
                 "consumes": [
                     "application/json"
                 ],
@@ -268,7 +322,7 @@ const docTemplate = `{
                 "tags": [
                     "Products"
                 ],
-                "summary": "Like a product by slug",
+                "summary": "Get a product by slug",
                 "parameters": [
                     {
                         "type": "string",

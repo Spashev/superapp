@@ -32,7 +32,7 @@ func RegisterRoutes(db *sqlx.DB, tokenMaker *token.JWTMaker) *fiber.App {
 
 		apiV1.Get("/products", middleware.Paginate, handler.GetProductList(db))
 		apiV1.Post("/products/:id/like", handler.LikeProductById(db))
-		apiV1.Post("/products/:id/dislike", handler.DislikeProductById(db))
+		apiV1.Delete("/products/:id/like", handler.DislikeProductById(db))
 		apiV1.Get("/products/:slug", handler.GetProductBySlug(db))
 		apiV1.Get("/categories", handler.GetCategories(db))
 	}
