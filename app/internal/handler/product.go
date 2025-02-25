@@ -2,6 +2,7 @@ package handler
 
 import (
 	"log"
+	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/jmoiron/sqlx"
@@ -83,37 +84,55 @@ func GetProductBySlug(db *sqlx.DB) fiber.Handler {
 	}
 }
 
-// LikeProductBySlug increases the like count of a product
+// LikeProductById increases the like count of a product
 // @Summary Like a product by slug
 // @Description Increments the product's like count
 // @Tags Products
 // @Accept json
 // @Produce json
-// @Param slug path string true "Product slug"
+// @Param id path int true "Product ID"
 // @Success 200 {object} models.Product
 // @Failure 400 {object} map[string]string "Bad request"
 // @Failure 500 {object} map[string]string "Server error"
-// @Router /products/{slug}/like [get]
-func LikeProductBySlug(db *sqlx.DB) fiber.Handler {
+// @Router /products/{id}/like [get]
+func LikeProductById(db *sqlx.DB) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		slug := c.Params("slug")
-		if slug == "" {
+		params := c.Params("id")
+		if params == "" {
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-				"error": "Slug is required",
+				"error": "Id is required",
+			})
+		}
+
+		id, err := strconv.Atoi(params)
+		if err != nil {
+			log.Println(err)
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": "Id must be an integer",
+			})
+		}
+
+		var user token.UserClaims
+		if u, ok := c.Locals("user").(*token.UserClaims); ok && u != nil {
+			user = *u
+		} else {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"error": "Unauthorized",
 			})
 		}
 
 		repo := repository.NewProductRepository(db)
 		productService := service.NewProductService(repo)
 
-		product, err := productService.LikeProductBySlug(slug)
-		if err != nil {
+		if err := productService.LikeProductById(user.UserID, id); err != nil {
 			log.Println(err)
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"error": "Failed to fetch product",
+				"error": "Failed to like product",
 			})
 		}
 
-		return c.Status(fiber.StatusOK).JSON(product)
+		return c.Status(fiber.StatusOK).JSON(fiber.Map{
+			"message": "Product liked successfully",
+		})
 	}
 }
