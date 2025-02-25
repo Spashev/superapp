@@ -44,3 +44,21 @@ func (r *CategoryRepository) GetAllCategories() ([]models.Category, error) {
 
 	return categories, nil
 }
+
+func (r *CategoryRepository) GetAllTypes() ([]models.ProductType, error) {
+	var types []models.ProductType
+	query := `
+		SELECT 
+			id,
+			name_ru AS name,
+			icon
+		FROM
+			types
+	`
+	err := r.db.Select(&types, query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute query: %w", err)
+	}
+
+	return types, nil
+}

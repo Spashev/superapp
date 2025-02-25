@@ -14,7 +14,7 @@ import (
 // GetCategories retrieves a list of all categories
 // @Summary Get all categories
 // @Description Fetches all available categories
-// @Tags Categories/Conveniences
+// @Tags Options
 // @Produce json
 // @Success 200 {array} models.Category "List of categories"
 // @Failure 500 {object} fiber.Map "Failed to fetch categories"
@@ -39,7 +39,7 @@ func GetCategories(db *sqlx.DB) fiber.Handler {
 // GetConveniences retrieves a list of all conveniences
 // @Summary Get all conveniences
 // @Description Fetches all available conveniences
-// @Tags Categories/Conveniences
+// @Tags Options
 // @Produce json
 // @Success 200 {array} models.Category "List of conveniences"
 // @Failure 500 {object} fiber.Map "Failed to fetch conveniences"
@@ -54,6 +54,31 @@ func GetConveniences(db *sqlx.DB) fiber.Handler {
 			log.Println(err)
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 				"error": "Failed to fetch conveniences",
+			})
+		}
+
+		return c.Status(fiber.StatusOK).JSON(categories)
+	}
+}
+
+// GetTypes retrieves a list of all types
+// @Summary Get all types
+// @Description Fetches all available types
+// @Tags Options
+// @Produce json
+// @Success 200 {array} models.ProductType "List of types"
+// @Failure 500 {object} fiber.Map "Failed to fetch types"
+// @Router /types [get]
+func GetTypes(db *sqlx.DB) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		repo := repository.NewCategoryRepository(db)
+		categoryService := service.NewCategoryService(repo)
+
+		categories, err := categoryService.GetAllTypes()
+		if err != nil {
+			log.Println(err)
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": "Failed to fetch types",
 			})
 		}
 

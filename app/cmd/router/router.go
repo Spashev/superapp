@@ -37,6 +37,7 @@ func RegisterRoutes(db *sqlx.DB, tokenMaker *token.JWTMaker) *fiber.App {
 
 		apiV1.Get("/categories", handler.GetCategories(db))
 		apiV1.Get("/conveniences", handler.GetConveniences(db))
+		apiV1.Get("/types", handler.GetTypes(db))
 
 		apiV1.Get("/countries", handler.GetCountry(db))
 		apiV1.Get("/cities", handler.GetCity(db))

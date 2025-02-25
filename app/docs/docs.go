@@ -133,7 +133,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Categories/Conveniences"
+                    "Options"
                 ],
                 "summary": "Get all categories",
                 "responses": {
@@ -191,7 +191,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Categories/Conveniences"
+                    "Options"
                 ],
                 "summary": "Get all conveniences",
                 "responses": {
@@ -495,6 +495,35 @@ const docTemplate = `{
                             "additionalProperties": {
                                 "type": "string"
                             }
+                        }
+                    }
+                }
+            }
+        },
+        "/types": {
+            "get": {
+                "description": "Fetches all available types",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Options"
+                ],
+                "summary": "Get all types",
+                "responses": {
+                    "200": {
+                        "description": "List of types",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.ProductType"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to fetch types",
+                        "schema": {
+                            "$ref": "#/definitions/fiber.Map"
                         }
                     }
                 }
