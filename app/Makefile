@@ -15,9 +15,9 @@ endif
 run: ## Run go server
 	go run ./main.go
 build: ## Build project
-	go build -o ./bin/bookit ./cmd/main.go
+	go build -o ./bin/bookit ./main.go
 swagger: ## Generate swagger
-	/Users/run/GO/bin/swag init -g ./cmd/main.go -o ./docs
+	/Users/run/GO/bin/swag init -g ./main.go -o ./docs
 test: ## Run all tests
 	go test -v -race -timeout 30s ./...
 
