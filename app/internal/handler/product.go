@@ -84,7 +84,7 @@ func GetProductBySlug(db *sqlx.DB) fiber.Handler {
 	}
 }
 
-// LikeProductById increases the like count of a product
+// ToggleLikeById increases the like count of a product
 // @Summary Like a product by slug
 // @Description Increments the product's like count
 // @Tags Products
@@ -95,7 +95,7 @@ func GetProductBySlug(db *sqlx.DB) fiber.Handler {
 // @Failure 400 {object} map[string]string "Bad request"
 // @Failure 500 {object} map[string]string "Server error"
 // @Router /products/{id}/like [get]
-func LikeProductById(db *sqlx.DB) fiber.Handler {
+func ToggleLikeById(db *sqlx.DB) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		params := c.Params("id")
 		if params == "" {
@@ -124,15 +124,15 @@ func LikeProductById(db *sqlx.DB) fiber.Handler {
 		repo := repository.NewProductRepository(db)
 		productService := service.NewProductService(repo)
 
-		if err := productService.LikeProductById(user.UserID, id); err != nil {
+		if err := productService.ToggleLike(user.UserID, id); err != nil {
 			log.Println(err)
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"error": "Failed to like product",
+				"error": "Failed to toggle like product",
 			})
 		}
 
 		return c.Status(fiber.StatusOK).JSON(fiber.Map{
-			"message": "Product liked successfully",
+			"message": "Product toggle like successfully",
 		})
 	}
 }

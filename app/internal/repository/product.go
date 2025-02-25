@@ -1,7 +1,9 @@
 package repository
 
 import (
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"time"
@@ -235,7 +237,7 @@ func (repository *ProductRepository) GetProductBySlug(slug string) (*models.Prod
 	return &product, nil
 }
 
-func (repository *ProductRepository) LikeProductById(userID, productID int) error {
+func (repository *ProductRepository) ToggleLike(userID, productID int) error {
 	tx, err := repository.db.Beginx()
 	if err != nil {
 		return err
@@ -249,31 +251,56 @@ func (repository *ProductRepository) LikeProductById(userID, productID int) erro
 		}
 	}()
 
-	updateQuery := `
-		UPDATE products SET like_count = like_count + 1 WHERE id = $1
-	`
-	_, err = tx.Exec(updateQuery, productID)
-	if err != nil {
-		return err
-	}
-
 	var likeID int
-	insertLikeQuery := `
-		INSERT INTO likes (product_id, user_id, count, created_at, updated_at) 
-		VALUES ($1, $2, 1, $3, $4)
-		RETURNING id
+	checkLikeQuery := `
+		SELECT id FROM likes WHERE product_id = $1 AND user_id = $2
 	`
-	err = tx.QueryRow(insertLikeQuery, productID, userID, time.Now(), time.Now()).Scan(&likeID)
-	if err != nil {
-		return err
-	}
+	err = tx.Get(&likeID, checkLikeQuery, productID, userID)
 
-	insertFavoriteQuery := `
-		INSERT INTO favorites (like_id, product_id, user_id, created_at, updated_at) 
-		VALUES ($1, $2, $3, $4, $5) 
-	`
-	_, err = tx.Exec(insertFavoriteQuery, likeID, productID, userID, time.Now(), time.Now())
-	if err != nil {
+	if err == nil {
+		deleteLikeQuery := `DELETE FROM likes WHERE id = $1`
+		_, err = tx.Exec(deleteLikeQuery, likeID)
+		if err != nil {
+			return err
+		}
+
+		deleteFavoriteQuery := `DELETE FROM favorites WHERE like_id = $1`
+		_, err = tx.Exec(deleteFavoriteQuery, likeID)
+		if err != nil {
+			return err
+		}
+
+		updateQuery := `UPDATE products SET like_count = like_count - 1 WHERE id = $1`
+		_, err = tx.Exec(updateQuery, productID)
+		if err != nil {
+			return err
+		}
+
+	} else if errors.Is(err, sql.ErrNoRows) {
+		insertLikeQuery := `
+			INSERT INTO likes (product_id, user_id, count, created_at, updated_at) 
+			VALUES ($1, $2, 1, $3, $4) RETURNING id
+		`
+		err = tx.QueryRow(insertLikeQuery, productID, userID, time.Now(), time.Now()).Scan(&likeID)
+		if err != nil {
+			return err
+		}
+
+		insertFavoriteQuery := `
+			INSERT INTO favorites (like_id, product_id, user_id, created_at, updated_at) 
+			VALUES ($1, $2, $3, $4, $5)
+		`
+		_, err = tx.Exec(insertFavoriteQuery, likeID, productID, userID, time.Now(), time.Now())
+		if err != nil {
+			return err
+		}
+
+		updateQuery := `UPDATE products SET like_count = like_count + 1 WHERE id = $1`
+		_, err = tx.Exec(updateQuery, productID)
+		if err != nil {
+			return err
+		}
+	} else {
 		return err
 	}
 

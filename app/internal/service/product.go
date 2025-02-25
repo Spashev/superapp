@@ -25,8 +25,8 @@ func (s *ProductService) GetProductBySlug(slug string) (models.Product, error) {
 	return *productPtr, nil
 }
 
-func (s *ProductService) LikeProductById(userId, id int) error {
-	if err := s.repo.LikeProductById(userId, id); err != nil {
+func (s *ProductService) ToggleLike(userId, id int) error {
+	if err := s.repo.ToggleLike(userId, id); err != nil {
 		return err
 	}
 	return nil
