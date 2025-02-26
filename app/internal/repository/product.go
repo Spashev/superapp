@@ -22,6 +22,11 @@ func NewProductRepository(db *sqlx.DB) *ProductRepository {
 }
 
 func (repository *ProductRepository) GetAllProducts(userId, limit, offset int) (*models.ProductsPaginate, error) {
+	imageBaseUrl := os.Getenv("IMAGE_BASE_URL")
+	if imageBaseUrl == "" {
+		return nil, fmt.Errorf("IMAGE_BASE_URL not set")
+	}
+
 	query := `
 		SELECT 
 			COUNT(*) OVER () AS total_count,
@@ -124,6 +129,10 @@ func (repository *ProductRepository) GetAllProducts(userId, limit, offset int) (
 		var images []models.ProductImages
 		if err := json.Unmarshal([]byte(temp.Images), &images); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal images JSON: %w", err)
+		}
+		for i := range images {
+			images[i].Original = imageBaseUrl + "/" + images[i].Original
+			images[i].Thumbnail = imageBaseUrl + "/" + images[i].Thumbnail
 		}
 
 		if totalCount == 0 {
