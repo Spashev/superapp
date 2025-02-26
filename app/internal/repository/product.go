@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -102,15 +103,16 @@ func (repository *ProductRepository) GetAllProducts(userId, limit, offset int) (
 
 	var products []models.Products
 	var totalCount int
+	type ProductTemp struct {
+		models.Products
+		Images      string
+		Total_count int
+		Is_favorite bool
+	}
 
+	var tempProducts []ProductTemp
 	for rows.Next() {
-		var temp struct {
-			models.Products
-			Images      string
-			Total_count int
-			Is_favorite bool
-		}
-
+		var temp ProductTemp
 		if err := rows.Scan(
 			&temp.Total_count,
 			&temp.Id, &temp.Slug,
@@ -126,30 +128,52 @@ func (repository *ProductRepository) GetAllProducts(userId, limit, offset int) (
 			return nil, fmt.Errorf("failed to scan row: %w", err)
 		}
 
-		var images []models.ProductImages
-		if err := json.Unmarshal([]byte(temp.Images), &images); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal images JSON: %w", err)
-		}
-		for i := range images {
-			images[i].Original = imageBaseUrl + "/" + images[i].Original
-			images[i].Thumbnail = imageBaseUrl + "/" + images[i].Thumbnail
-		}
-
 		if totalCount == 0 {
 			totalCount = temp.Total_count
 		}
 
-		temp.Products.Images = images
-		temp.Products.Is_favorite = temp.Is_favorite
+		tempProducts = append(tempProducts, temp)
+	}
 
-		products = append(products, temp.Products)
+	var wg sync.WaitGroup
+	results := make(chan models.Products, len(tempProducts))
+
+	for _, temp := range tempProducts {
+		wg.Add(1)
+		go func(temp ProductTemp) {
+			defer wg.Done()
+			var images []models.ProductImages
+			if err := json.Unmarshal([]byte(temp.Images), &images); err != nil {
+				fmt.Println("failed to unmarshal images JSON:", err)
+				return
+			}
+
+			for i := range images {
+				images[i].Original = imageBaseUrl + "/" + images[i].Original
+				images[i].Thumbnail = imageBaseUrl + "/" + images[i].Thumbnail
+			}
+
+			temp.Products.Images = images
+			temp.Products.Is_favorite = temp.Is_favorite
+
+			results <- temp.Products
+		}(temp)
+	}
+
+	go func() {
+		wg.Wait()
+		close(results)
+	}()
+
+	for product := range results {
+		products = append(products, product)
 	}
 
 	totalPages := (totalCount + limit - 1) / limit
-
 	baseURL := os.Getenv("BASE_URL")
+
 	next := ""
-	if offset < totalCount {
+	if offset+limit < totalCount {
 		next = fmt.Sprintf("%s/products?limit=%d&offset=%d", baseURL, limit, offset+limit)
 	}
 
