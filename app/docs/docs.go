@@ -477,7 +477,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Products"
+                    "UserProducts"
                 ],
                 "summary": "Get a list of user favorite products",
                 "parameters": [

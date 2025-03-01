@@ -592,7 +592,7 @@ paths:
       - BearerAuth: []
       summary: Get a list of user favorite products
       tags:
-      - Products
+      - UserProducts
   /users/create:
     post:
       consumes:
