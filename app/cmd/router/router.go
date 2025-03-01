@@ -12,11 +12,7 @@ import (
 )
 
 func RegisterRoutes(db *sqlx.DB, tokenMaker *token.JWTMaker) *fiber.App {
-	app := fiber.New(fiber.Config{
-		ServerHeader:  "Bookit",
-		AppName:       "Bookit App v0.1-beta",
-		CaseSensitive: true,
-	})
+	app := fiber.New(initializers.NewFiberConfig())
 
 	app.Use(middleware.CorsHandler)
 	app.Use(requestid.New())
@@ -26,9 +22,11 @@ func RegisterRoutes(db *sqlx.DB, tokenMaker *token.JWTMaker) *fiber.App {
 
 	apiV1 := app.Group("/api/v1")
 	{
-		apiV1.Post("/register", handler.Register(db, tokenMaker))
-		apiV1.Post("/login", handler.Login(db, tokenMaker))
+		apiV1.Post("/users/create", handler.Register(db, tokenMaker))
+		apiV1.Post("/users/token", handler.Login(db, tokenMaker))
 		apiV1.Get("/users/me", handler.UserMe(db, tokenMaker))
+
+		apiV1.Get("/user/favorite/products", handler.GetUserFavoriteProducts(db))
 
 		apiV1.Get("/products", middleware.Paginate, handler.GetProductList(db))
 		apiV1.Post("/products/:id/like", handler.LikeProductById(db))

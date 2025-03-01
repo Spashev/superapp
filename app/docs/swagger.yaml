@@ -263,77 +263,6 @@ info:
   title: SuperApp API
   version: "1.0"
 paths:
-  /auth/login:
-    post:
-      consumes:
-      - application/json
-      description: Authenticate user and return access tokens
-      parameters:
-      - description: User credentials
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/schema.AuthLoginReq'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Successfully authenticated
-          schema:
-            $ref: '#/definitions/schema.AuthLoginRes'
-        "400":
-          description: Invalid request body or credentials
-          schema:
-            $ref: '#/definitions/fiber.Map'
-      summary: User login
-      tags:
-      - Authentication
-  /auth/me:
-    get:
-      description: Returns user details for the authenticated user
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: User details
-          schema:
-            $ref: '#/definitions/models.User'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/fiber.Map'
-      security:
-      - BearerAuth: []
-      summary: Get user details
-      tags:
-      - Authentication
-  /auth/register:
-    post:
-      consumes:
-      - application/json
-      description: Register a new user
-      parameters:
-      - description: User registration data
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/schema.RegisterReq'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Registration successful
-          schema:
-            type: string
-        "400":
-          description: Invalid request body or registration error
-          schema:
-            $ref: '#/definitions/fiber.Map'
-      summary: User registration
-      tags:
-      - Authentication
   /categories:
     get:
       description: Fetches all available categories
@@ -470,12 +399,18 @@ paths:
             items:
               $ref: '#/definitions/models.Product'
             type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/fiber.Map'
         "500":
           description: Server error
           schema:
             additionalProperties:
               type: string
             type: object
+      security:
+      - BearerAuth: []
       summary: Get a list of products
       tags:
       - Products
@@ -505,12 +440,18 @@ paths:
             additionalProperties:
               type: string
             type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/fiber.Map'
         "500":
           description: Server error
           schema:
             additionalProperties:
               type: string
             type: object
+      security:
+      - BearerAuth: []
       summary: Dislike a product by id
       tags:
       - Products
@@ -539,12 +480,18 @@ paths:
             additionalProperties:
               type: string
             type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/fiber.Map'
         "500":
           description: Server error
           schema:
             additionalProperties:
               type: string
             type: object
+      security:
+      - BearerAuth: []
       summary: Like a product by slug
       tags:
       - Products
@@ -572,12 +519,18 @@ paths:
             additionalProperties:
               type: string
             type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/fiber.Map'
         "500":
           description: Server error
           schema:
             additionalProperties:
               type: string
             type: object
+      security:
+      - BearerAuth: []
       summary: Get a product by slug
       tags:
       - Products
@@ -600,4 +553,115 @@ paths:
       summary: Get all types
       tags:
       - Options
+  /user/favorite/products:
+    get:
+      consumes:
+      - application/json
+      description: Returns a paginated list of user favorite products
+      parameters:
+      - default: 20
+        description: Limit
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: Offset
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Product'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/fiber.Map'
+        "500":
+          description: Server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get a list of user favorite products
+      tags:
+      - Products
+  /users/create:
+    post:
+      consumes:
+      - application/json
+      description: Register a new user
+      parameters:
+      - description: User registration data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/schema.RegisterReq'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Registration successful
+          schema:
+            type: string
+        "400":
+          description: Invalid request body or registration error
+          schema:
+            $ref: '#/definitions/fiber.Map'
+      summary: User registration
+      tags:
+      - Authentication
+  /users/me:
+    get:
+      description: Returns user details for the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User details
+          schema:
+            $ref: '#/definitions/models.User'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/fiber.Map'
+      security:
+      - BearerAuth: []
+      summary: Get user details
+      tags:
+      - Authentication
+  /users/token:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user and return access tokens
+      parameters:
+      - description: User credentials
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/schema.AuthLoginReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully authenticated
+          schema:
+            $ref: '#/definitions/schema.AuthLoginRes'
+        "400":
+          description: Invalid request body or credentials
+          schema:
+            $ref: '#/definitions/fiber.Map'
+      summary: User login
+      tags:
+      - Authentication
 swagger: "2.0"

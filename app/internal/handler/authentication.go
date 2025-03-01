@@ -22,7 +22,7 @@ import (
 // @Param request body schema.AuthLoginReq true "User credentials"
 // @Success 200 {object} schema.AuthLoginRes "Successfully authenticated"
 // @Failure 400 {object} fiber.Map "Invalid request body or credentials"
-// @Router /auth/login [post]
+// @Router /users/token [post]
 func Login(db *sqlx.DB, tokenMaker *token.JWTMaker) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		var loginReq schema.AuthLoginReq
@@ -55,7 +55,7 @@ func Login(db *sqlx.DB, tokenMaker *token.JWTMaker) fiber.Handler {
 // @Success 200 {object} models.User "User details"
 // @Failure 401 {object} fiber.Map "Unauthorized"
 // @Security BearerAuth
-// @Router /auth/me [get]
+// @Router /users/me [get]
 func UserMe(db *sqlx.DB, tokenMaker *token.JWTMaker) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		repo := repository.NewAuthenticationRepository(db)
@@ -81,7 +81,7 @@ func UserMe(db *sqlx.DB, tokenMaker *token.JWTMaker) fiber.Handler {
 // @Param request body schema.RegisterReq true "User registration data"
 // @Success 201 {string} string "Registration successful"
 // @Failure 400 {object} fiber.Map "Invalid request body or registration error"
-// @Router /auth/register [post]
+// @Router /users/create [post]
 func Register(db *sqlx.DB, tokenMaker *token.JWTMaker) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		var registerReq schema.RegisterReq

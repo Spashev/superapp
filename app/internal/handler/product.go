@@ -22,7 +22,9 @@ import (
 // @Param limit query int false "Limit" default(20)
 // @Param offset query int false "Offset" default(0)
 // @Success 200 {array} models.Product
+// @Failure 401 {object} fiber.Map "Unauthorized"
 // @Failure 500 {object} map[string]string "Server error"
+// @Security BearerAuth
 // @Router /products [get]
 func GetProductList(db *sqlx.DB) fiber.Handler {
 	return func(c *fiber.Ctx) error {
@@ -58,7 +60,9 @@ func GetProductList(db *sqlx.DB) fiber.Handler {
 // @Param slug path string true "Product slug"
 // @Success 200 {object} models.Product
 // @Failure 400 {object} map[string]string "Bad request"
+// @Failure 401 {object} fiber.Map "Unauthorized"
 // @Failure 500 {object} map[string]string "Server error"
+// @Security BearerAuth
 // @Router /products/{slug} [get]
 func GetProductBySlug(db *sqlx.DB) fiber.Handler {
 	return func(c *fiber.Ctx) error {
@@ -84,6 +88,47 @@ func GetProductBySlug(db *sqlx.DB) fiber.Handler {
 	}
 }
 
+// GetUserFavoriteProducts retrieves a list of user favorite products
+// @Summary Get a list of user favorite products
+// @Description Returns a paginated list of user favorite products
+// @Tags Products
+// @Accept json
+// @Produce json
+// @Param limit query int false "Limit" default(20)
+// @Param offset query int false "Offset" default(0)
+// @Success 200 {array} models.Product
+// @Failure 401 {object} fiber.Map "Unauthorized"
+// @Failure 500 {object} map[string]string "Server error"
+// @Security BearerAuth
+// @Router /user/favorite/products [get]
+func GetUserFavoriteProducts(db *sqlx.DB) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		limit := c.QueryInt("limit", 20)
+		offset := c.QueryInt("offset", 0)
+
+		var user token.UserClaims
+		if u, ok := c.Locals("user").(*token.UserClaims); ok && u != nil {
+			user = *u
+		} else {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"error": "Unauthorized",
+			})
+		}
+
+		repo := repository.NewProductRepository(db)
+		productService := service.NewProductService(repo)
+
+		products, err := productService.GetUserFavoriteProducts(user.UserID, limit, offset)
+		if err != nil {
+			log.Println(err)
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": "Failed to fetch user favorite products",
+			})
+		}
+		return c.Status(fiber.StatusOK).JSON(products)
+	}
+}
+
 // LikeProductById increases the like count of a product
 // @Summary Like a product by slug
 // @Description Increments the product's like count
@@ -93,7 +138,9 @@ func GetProductBySlug(db *sqlx.DB) fiber.Handler {
 // @Param id path int true "Product ID"
 // @Success 200 {object} map[string]string "Product likeed successfully"
 // @Failure 400 {object} map[string]string "Bad request"
+// @Failure 401 {object} fiber.Map "Unauthorized"
 // @Failure 500 {object} map[string]string "Server error"
+// @Security BearerAuth
 // @Router /products/{id}/like [post]
 func LikeProductById(db *sqlx.DB) fiber.Handler {
 	return func(c *fiber.Ctx) error {
@@ -146,7 +193,9 @@ func LikeProductById(db *sqlx.DB) fiber.Handler {
 // @Param id path int true "Product ID"
 // @Success 200 {object} map[string]string "Product disliked successfully"
 // @Failure 400 {object} map[string]string "Bad request"
+// @Failure 401 {object} fiber.Map "Unauthorized"
 // @Failure 500 {object} map[string]string "Server error"
+// @Security BearerAuth
 // @Router /products/{id}/like [delete]
 func DislikeProductById(db *sqlx.DB) fiber.Handler {
 	return func(c *fiber.Ctx) error {
